@@ -650,6 +650,7 @@ function ApplyModal({job, onClose, user}){
   const [errors,setErrors]=useState({});
   const [preview,setPreview]=useState(null);
   const [atTop,setAtTop]=React.useState(true);
+  const [showCoach,setShowCoach]=useState(false);
   const scrollRef=useRef();
 
   // Lock page scroll while modal is open
@@ -722,6 +723,7 @@ function ApplyModal({job, onClose, user}){
   return(
     <>
       {preview&&<FilePreviewModal file={preview} onClose={()=>setPreview(null)}/>}
+      {showCoach&&<AICoachModal job={job} user={user} onClose={()=>setShowCoach(false)}/>}
       <div style={{
         position:'fixed',inset:0,zIndex:1500,
         display:'flex',alignItems:'center',justifyContent:'center',
@@ -821,6 +823,16 @@ function ApplyModal({job, onClose, user}){
               onPreview={setPreview}
             />
             {errors.cv&&<div className="field-error" style={{marginTop:-8,marginBottom:10}}>{errors.cv}</div>}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,margin:'0 0 6px',flexWrap:'wrap'}}>
+              <div style={{fontSize:11,color:'var(--text3)',fontWeight:600}}>Need help writing your cover letter?</div>
+              <button
+                type="button"
+                onClick={()=>setShowCoach(true)}
+                style={{display:'inline-flex',alignItems:'center',gap:6,padding:'6px 12px',borderRadius:8,border:'1.5px solid var(--accent)',background:'rgba(79,70,229,.06)',color:'var(--accent)',fontSize:12,fontWeight:700,cursor:'pointer'}}
+              >
+                <span className="material-symbols-rounded" style={{fontSize:14}}>auto_awesome</span>Draft with AI Coach
+              </button>
+            </div>
             <FileUploadZone
               label="Cover Letter"
               required
@@ -1906,6 +1918,199 @@ function OnboardingWizard({user,onComplete}){
   );
 }
 
+// ── AI TOP PICKS ─────────────────────────────────────
+// Calls /api/ai/rank on first dashboard load, caches the result in
+// localStorage keyed by (uid, profile hash, jobs hash). Re-runs only
+// when one of those changes. Surfaces Claude's top 3 ranked jobs with
+// a one-sentence "why" — the dashboard moment that puts Claude front
+// and centre instead of buried in an Insights tab.
+function AITopPicks({jobs,user,setPage,setApplyJob}){
+  const profile=user?.profile||{};
+  const uid=user?.user?.id;
+  const [ranks,setRanks]=useState(null); // null=loading, []=none, [...]=ranked
+  const [error,setError]=useState('');
+  const [refreshing,setRefreshing]=useState(false);
+  const [hasFired,setHasFired]=useState(false);
+
+  // Stable cache key — change profile or job list, key changes, ranking re-fires.
+  const profileKey=JSON.stringify([
+    profile.major||'',profile.year||'',
+    (profile.desired_roles||[]).slice().sort(),
+    (profile.preferred_industries||[]).slice().sort(),
+    (profile.skills||[]).slice().sort(),
+    profile.work_type||'',profile.location_pref||'',
+  ]);
+  const jobsKey=jobs.slice(0,40).map(j=>j.id).join(',');
+  const cacheKey=uid?`aluhub_airank_${uid}`:null;
+
+  async function runRank(){
+    if(!uid||!jobs.length) return;
+    setRefreshing(true);
+    setError('');
+    try{
+      const payload={
+        profile:{
+          major:profile.major,year:profile.year,bio:profile.bio,
+          desired_roles:profile.desired_roles,preferred_industries:profile.preferred_industries,
+          skills:profile.skills,work_type:profile.work_type,location_pref:profile.location_pref,
+        },
+        jobs:jobs.slice(0,40).map(j=>({
+          id:j.id,title:j.title,description:j.description,
+          type:j.listing_type||j.type,location:j.loc||j.location,tags:j.tags||[],
+        })),
+      };
+      const res=await fetch(getApiUrl()+'/api/ai/rank',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload),
+      });
+      if(!res.ok){
+        const err=await res.json().catch(()=>({}));
+        throw new Error(err.error||'Server returned '+res.status);
+      }
+      const data=await res.json();
+      const arr=data.rankings||[];
+      setRanks(arr);
+      if(cacheKey){
+        try{localStorage.setItem(cacheKey,JSON.stringify({profileKey,jobsKey,ranks:arr,ts:Date.now()}));}catch(_){}
+      }
+    }catch(e){
+      console.warn('[AITopPicks] failed:',e);
+      setError(e.message||'Could not rank');
+      setRanks([]);
+    }finally{
+      setRefreshing(false);
+    }
+  }
+
+  useEffect(()=>{
+    if(hasFired||!jobs.length||!uid) return;
+    setHasFired(true);
+    // Try cache first
+    if(cacheKey){
+      try{
+        const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+        if(cached&&cached.profileKey===profileKey&&cached.jobsKey===jobsKey&&Array.isArray(cached.ranks)){
+          setRanks(cached.ranks);
+          return;
+        }
+      }catch(_){}
+    }
+    runRank();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[jobs.length,uid]);
+
+  // Hide entirely for users with no jobs at all
+  if(!jobs.length) return null;
+
+  const top=(ranks||[]).slice(0,3)
+    .map(r=>{const j=jobs.find(x=>x.id===r.job_id);return j?{...j,_rank:r}:null;})
+    .filter(Boolean);
+
+  const scoreColor=s=>s>=85?'#03893A':s>=70?'#2563EB':s>=50?'#D97706':'#8A9099';
+  const scoreLabel=s=>s>=85?'Strong fit':s>=70?'Good fit':s>=50?'Possible fit':'Weak fit';
+
+  return (
+    <div className="card anim anim-d2" style={{padding:'18px 20px',marginBottom:14,background:'linear-gradient(135deg,rgba(79,70,229,.04),rgba(37,99,235,.04))',border:'1.5px solid rgba(79,70,229,.18)'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,marginBottom:10,flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:34,height:34,borderRadius:10,background:'linear-gradient(135deg,#0A2E5C,#2563EB)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <img src={CLAUDE_LOGO} alt="Claude" style={{width:18,height:18}}/>
+          </div>
+          <div>
+            <div style={{fontSize:14.5,fontWeight:800,fontFamily:"'Plus Jakarta Sans',sans-serif",color:'var(--text)',letterSpacing:'-.02em'}}>Your AI top picks</div>
+            <div style={{fontSize:11.5,color:'var(--text3)'}}>Claude ranked every live listing against your profile</div>
+          </div>
+        </div>
+        <button
+          onClick={runRank}
+          disabled={refreshing}
+          style={{display:'inline-flex',alignItems:'center',gap:5,padding:'5px 12px',borderRadius:20,border:'1.5px solid var(--accent)',background:'transparent',color:'var(--accent)',fontSize:11.5,fontWeight:700,cursor:refreshing?'default':'pointer',opacity:refreshing?.6:1}}
+        >
+          <span className="material-symbols-rounded" style={{fontSize:13,animation:refreshing?'spin 1s linear infinite':'none'}}>{refreshing?'autorenew':'refresh'}</span>
+          {refreshing?'Ranking…':'Re-rank'}
+        </button>
+      </div>
+
+      {ranks===null && (
+        <div style={{padding:'18px 0',textAlign:'center'}}>
+          <div style={{width:32,height:32,borderRadius:'50%',border:'3px solid var(--border)',borderTopColor:'var(--accent)',animation:'spin .8s linear infinite',margin:'0 auto 10px'}}/>
+          <div style={{fontSize:12.5,color:'var(--text3)'}}>Claude is scoring {jobs.length} listings for you…</div>
+        </div>
+      )}
+
+      {ranks!==null && top.length===0 && !error && (
+        <div style={{padding:'14px 4px',fontSize:13,color:'var(--text2)'}}>
+          No strong AI matches yet — set your <button onClick={()=>setPage&&setPage('profile')} style={{background:'none',border:'none',color:'var(--accent)',fontWeight:700,cursor:'pointer',padding:0,textDecoration:'underline'}}>profile preferences</button> so Compass can score you accurately.
+        </div>
+      )}
+
+      {error && (
+        <div style={{padding:'10px 12px',background:'rgba(220,38,38,.06)',border:'1px solid rgba(220,38,38,.2)',borderRadius:10,fontSize:12.5,color:'#DC2626'}}>
+          {error} <button onClick={runRank} style={{background:'none',border:'none',color:'#DC2626',fontWeight:700,cursor:'pointer',textDecoration:'underline',padding:0,marginLeft:6}}>Try again</button>
+        </div>
+      )}
+
+      {top.length>0 && (
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          {top.map((j,i)=>{
+            const sc=j._rank?.score??0;
+            const why=j._rank?.why||'';
+            return (
+              <div
+                key={j.id}
+                onClick={()=>{window.__pendingJobToOpen=j.id;if(setPage)setPage('internships');}}
+                style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 14px',borderRadius:12,border:'1px solid var(--border)',background:'var(--card)',cursor:'pointer',transition:'border-color .12s,transform .1s'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--accent)';}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--border)';}}
+              >
+                <div style={{width:40,height:40,borderRadius:10,flexShrink:0,overflow:'hidden',border:'1px solid var(--border)',background:'var(--bg3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {j.avatar_url
+                    ?<img src={j.avatar_url} alt={j.co} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                    :<div style={{width:'100%',height:'100%',background:j.bg||'linear-gradient(135deg,#0A2E5C,#1a4a80)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#fff'}}>{(j.co||'C').slice(0,2).toUpperCase()}</div>
+                  }
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:2}}>
+                    <div style={{fontSize:13.5,fontWeight:700,color:'var(--text)',letterSpacing:'-.01em'}}>{j.title}</div>
+                    <span style={{display:'inline-flex',alignItems:'center',gap:3,padding:'1px 8px',borderRadius:20,background:scoreColor(sc)+'20',color:scoreColor(sc),fontSize:10.5,fontWeight:800,border:'1px solid '+scoreColor(sc)+'40'}}>
+                      <span className="material-symbols-rounded" style={{fontSize:11}}>auto_awesome</span>
+                      {sc}% · {scoreLabel(sc)}
+                    </span>
+                  </div>
+                  <div style={{fontSize:11.5,color:'var(--text3)',marginBottom:5}}>{j.co}{j.loc?' · '+j.loc:''}</div>
+                  {why && (
+                    <div style={{fontSize:12,color:'var(--text2)',lineHeight:1.45,fontStyle:'italic',display:'flex',gap:5,alignItems:'flex-start'}}>
+                      <span className="material-symbols-rounded" style={{fontSize:13,color:'var(--accent)',flexShrink:0,marginTop:1}}>format_quote</span>
+                      {why}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={e=>{
+                    e.stopPropagation();
+                    if(j.apply_url){window.open(j.apply_url,'_blank','noopener,noreferrer');return;}
+                    if(setApplyJob) setApplyJob(j);
+                  }}
+                  style={{display:'inline-flex',alignItems:'center',gap:4,padding:'5px 11px',borderRadius:18,border:'none',background:'var(--accent)',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',flexShrink:0,alignSelf:'center'}}
+                >
+                  <span className="material-symbols-rounded" style={{fontSize:12}}>{j.apply_url?'open_in_new':'send'}</span>Apply
+                </button>
+              </div>
+            );
+          })}
+          <button
+            onClick={()=>setPage&&setPage('compass')}
+            style={{marginTop:4,padding:'8px 14px',borderRadius:10,border:'1.5px dashed var(--accent)',background:'transparent',color:'var(--accent)',fontSize:12,fontWeight:700,cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6}}
+          >
+            <span className="material-symbols-rounded" style={{fontSize:14}}>explore</span>
+            Want more? Open Compass for a deeper interview-driven match
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StudentDashboard({setPage,user,jobs,skills,resources,companies,applyJob,setApplyJob}){
   const firstName=(user?.profile?.full_name||user?.form?.name||'there').split(' ')[0];
   const hour=new Date().getHours();
@@ -1953,6 +2158,8 @@ function StudentDashboard({setPage,user,jobs,skills,resources,companies,applyJob
           <span className="material-symbols-rounded" style={{fontSize:80,color:"var(--accent)",opacity:.15,fontVariationSettings:"'FILL' 1"}}>public</span>
         </div>
       </div>
+
+      <AITopPicks jobs={jobs} user={user} setPage={setPage} setApplyJob={setApplyJob}/>
 
       <div className="stats-grid anim anim-d2">
         {[
@@ -2831,6 +3038,7 @@ function Internships({setPage,onViewCompany}){
 
 function JobDetailPage({job,onBack,user,setPage,onViewCompany}){
   const [showApply,setShowApply]=useState(false);
+  const [showCoach,setShowCoach]=useState(false);
   const [apps,setApps]=useState(null);
   const [showApps,setShowApps]=useState(false);
   const [appCount,setAppCount]=useState(typeof job.applicantCount==='number'?job.applicantCount:null);
@@ -3024,7 +3232,7 @@ function JobDetailPage({job,onBack,user,setPage,onViewCompany}){
         )}
 
         {/* Apply button — only shown to students; companies see a back button only */}
-        <div style={{borderTop:'1px solid var(--border)',paddingTop:16,display:'flex',gap:10}}>
+        <div style={{borderTop:'1px solid var(--border)',paddingTop:16,display:'flex',gap:10,flexWrap:'wrap'}}>
           {!isCompanyUser&&(
             <button className="btn btn-cta" onClick={()=>{
               // External apply URL set on the listing? → open it in a new tab.
@@ -3035,12 +3243,23 @@ function JobDetailPage({job,onBack,user,setPage,onViewCompany}){
               <span className="material-symbols-rounded" style={{fontSize:16}}>{job?.apply_url?'open_in_new':'send'}</span> Apply
             </button>
           )}
+          {!isCompanyUser&&(
+            <button
+              className="btn btn-outline"
+              onClick={()=>setShowCoach(true)}
+              title="Let Claude draft, critique, and refine a cover-letter paragraph for you"
+              style={{borderColor:'var(--accent)',color:'var(--accent)',display:'inline-flex',alignItems:'center',gap:6}}
+            >
+              <span className="material-symbols-rounded" style={{fontSize:16}}>auto_awesome</span>AI Coach
+            </button>
+          )}
           <button className="btn btn-ghost" onClick={onBack}>
             <span className="material-symbols-rounded" style={{fontSize:16}}>arrow_back</span> {isCompanyUser?'Back to My Listings':'Back'}
           </button>
         </div>
       </div>
       {showApply&&<ApplyModal job={job} user={user} onClose={()=>setShowApply(false)}/>}
+      {showCoach&&<AICoachModal job={job} user={user} onClose={()=>setShowCoach(false)}/>}
     </div>
   );
 }
@@ -12758,6 +12977,785 @@ Tone: warm, concrete, African-context aware. Skip filler ("Great question!", "I'
   );
 }
 
+// ══════════════════════════════════════════════════════════════════
+//  AI COACH MODAL — multi-stage agent (draft → critique → refine)
+//  POST /api/ai/coach returns all three stages; we reveal them
+//  sequentially so judges can see the agent's reasoning unfold.
+// ══════════════════════════════════════════════════════════════════
+function AICoachModal({job,user,onClose,onUseRefined}){
+  const profile=user?.profile||{};
+  const studentName=(profile.full_name||user?.user?.email||'there').split(' ')[0];
+  const [phase,setPhase]=useState('idle'); // idle | drafting | critiquing | refining | done | error
+  const [notes,setNotes]=useState('');
+  const [draft,setDraft]=useState('');
+  const [critique,setCritique]=useState(null);
+  const [refined,setRefined]=useState('');
+  const [errMsg,setErrMsg]=useState('');
+  const [copied,setCopied]=useState(false);
+
+  // Inject scoped CSS once
+  useEffect(()=>{
+    if(document.getElementById('aic-css')) return;
+    const s=document.createElement('style');s.id='aic-css';
+    s.textContent=`
+      .aic-overlay{position:fixed;inset:0;z-index:1800;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);}
+      .aic-modal{background:var(--card);border-radius:20px;width:min(720px,100%);max-height:92vh;display:flex;flex-direction:column;border:1px solid var(--border);box-shadow:0 24px 64px rgba(0,0,0,.22);overflow:hidden;}
+      .aic-head{padding:18px 22px 14px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#0A2E5C 0%,#1a4a80 55%,#2563EB 100%);color:#fff;display:flex;align-items:center;gap:14px;}
+      .aic-head-icon{width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+      .aic-head-title{font-size:16px;font-weight:800;letter-spacing:-.02em;font-family:'Plus Jakarta Sans',sans-serif;}
+      .aic-head-sub{font-size:12px;opacity:.85;margin-top:2px;}
+      .aic-close{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+      .aic-body{flex:1;overflow-y:auto;padding:18px 22px 22px;}
+      .aic-stages{display:flex;align-items:center;gap:6px;margin-bottom:18px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;}
+      .aic-stage{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);}
+      .aic-stage.active{border-color:var(--accent);color:var(--accent);background:rgba(79,70,229,.08);}
+      .aic-stage.done{border-color:var(--green);color:var(--green);background:rgba(5,150,105,.08);}
+      .aic-block{margin-top:14px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg2);}
+      .aic-block-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);}
+      .aic-block-text{font-size:13.5px;line-height:1.6;color:var(--text);white-space:pre-wrap;font-family:Georgia,'Times New Roman',serif;}
+      .aic-crit-row{display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:12.5px;color:var(--text2);line-height:1.5;}
+      .aic-crit-row .material-symbols-rounded{font-size:14px;flex-shrink:0;margin-top:1px;}
+      .aic-crit-section{margin-top:10px;}
+      .aic-crit-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;gap:5px;}
+      .aic-verdict{margin-top:10px;padding:8px 12px;background:rgba(79,70,229,.08);border-left:3px solid var(--accent);font-size:12.5px;color:var(--text);border-radius:0 6px 6px 0;font-style:italic;}
+      .aic-final{margin-top:14px;padding:16px 18px;border:2px solid var(--accent);border-radius:14px;background:linear-gradient(135deg,rgba(79,70,229,.04),rgba(37,99,235,.04));}
+      .aic-final .aic-block-text{font-size:14px;}
+      .aic-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+      .aic-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--accent);background:var(--accent);color:#fff;transition:opacity .15s,transform .1s;}
+      .aic-btn:hover{opacity:.9;}
+      .aic-btn-ghost{background:transparent;color:var(--accent);}
+      .aic-spinner{width:14px;height:14px;border-radius:50%;border:2px solid var(--text3);border-top-color:var(--accent);animation:spin .8s linear infinite;display:inline-block;}
+      .aic-notes{width:100%;min-height:64px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;background:var(--bg2);color:var(--text);resize:vertical;font-family:inherit;outline:none;}
+      .aic-notes:focus{border-color:var(--accent);}
+      .aic-empty-hint{font-size:13px;color:var(--text2);line-height:1.6;margin:6px 0 16px;}
+      .aic-fade-in{animation:aicFade .35s ease-out;}
+      @keyframes aicFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+      @media(max-width:640px){
+        .aic-modal{border-radius:14px;}
+        .aic-head{padding:14px 16px 12px;}
+        .aic-body{padding:14px 16px 18px;}
+        .aic-head-title{font-size:14.5px;}
+      }
+    `;
+    document.head.appendChild(s);
+  },[]);
+
+  // Lock page scroll while modal is open
+  useEffect(()=>{
+    const prev=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    return()=>{document.body.style.overflow=prev;};
+  },[]);
+
+  if(!job) return null;
+
+  async function runCoach(){
+    setPhase('drafting');
+    setErrMsg('');
+    setDraft('');setCritique(null);setRefined('');
+
+    // Animate phase indicator while the (single) server call works through
+    // its three internal stages. The labels narrate what's happening.
+    const phaseClock=setTimeout(()=>setPhase('critiquing'),4500);
+    const phaseClock2=setTimeout(()=>setPhase('refining'),9000);
+
+    try{
+      const res=await fetch(getApiUrl()+'/api/ai/coach',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          profile:{
+            full_name:profile.full_name,
+            major:profile.major,
+            year:profile.year,
+            bio:profile.bio,
+            desired_roles:profile.desired_roles,
+            preferred_industries:profile.preferred_industries,
+            skills:profile.skills,
+          },
+          job:{
+            title:job.title,
+            company:job.co||job.company,
+            description:job.description,
+            tags:job.tags,
+            location:job.loc||job.location,
+            type:job.listing_type||job.type,
+          },
+          notes,
+        }),
+      });
+      clearTimeout(phaseClock);clearTimeout(phaseClock2);
+      if(!res.ok){
+        const err=await res.json().catch(()=>({}));
+        throw new Error(err.error||'Server returned '+res.status);
+      }
+      const data=await res.json();
+      // Reveal each stage with a small delay for that "agent working" feel
+      setDraft(data.draft||'');
+      setPhase('critiquing');
+      await new Promise(r=>setTimeout(r,650));
+      setCritique(data.critique||{});
+      setPhase('refining');
+      await new Promise(r=>setTimeout(r,700));
+      setRefined(data.refined||data.draft||'');
+      setPhase('done');
+    }catch(e){
+      clearTimeout(phaseClock);clearTimeout(phaseClock2);
+      console.warn('[AICoach] failed:',e);
+      setErrMsg(e.message||'Coaching failed. Try again.');
+      setPhase('error');
+    }
+  }
+
+  function copyRefined(){
+    const text=refined||draft;
+    if(!text) return;
+    try{
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(()=>setCopied(false),1800);
+    }catch(_){}
+  }
+
+  function stageChip(label,state){
+    const cls='aic-stage'+(state==='active'?' active':state==='done'?' done':'');
+    const icon=state==='done'?'check':state==='active'?'autorenew':'circle';
+    return (
+      <span className={cls}>
+        <span className="material-symbols-rounded" style={{fontSize:13,animation:state==='active'?'spin 1s linear infinite':'none'}}>{icon}</span>
+        {label}
+      </span>
+    );
+  }
+
+  const stageState=(name)=>{
+    const order=['drafting','critiquing','refining','done'];
+    const myIdx=order.indexOf(name);
+    const curIdx=order.indexOf(phase);
+    if(phase==='idle'||phase==='error') return 'pending';
+    if(curIdx>myIdx) return 'done';
+    if(curIdx===myIdx) return 'active';
+    return 'pending';
+  };
+
+  return (
+    <div className="aic-overlay" onClick={onClose}>
+      <div className="aic-modal" onClick={e=>e.stopPropagation()}>
+        <div className="aic-head">
+          <div className="aic-head-icon">
+            <img src={CLAUDE_LOGO} alt="Claude" style={{width:22,height:22}}/>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div className="aic-head-title">AI Application Coach</div>
+            <div className="aic-head-sub">{job.title} · {job.co||job.company}</div>
+          </div>
+          <button className="aic-close" onClick={onClose} title="Close">
+            <span className="material-symbols-rounded" style={{fontSize:17}}>close</span>
+          </button>
+        </div>
+
+        <div className="aic-body">
+          {phase==='idle' && (
+            <>
+              <div className="aic-empty-hint">
+                Hey {studentName} — I'll draft a cover-letter paragraph for this role using your profile, then critique my own draft against the job, then refine it. Three stages, one click. You'll see each step.
+              </div>
+              <label style={{fontSize:11,fontWeight:800,color:'var(--text3)',textTransform:'uppercase',letterSpacing:.7,display:'block',marginBottom:6}}>Optional notes for the coach</label>
+              <textarea
+                className="aic-notes"
+                value={notes}
+                onChange={e=>setNotes(e.target.value.slice(0,600))}
+                placeholder="e.g. emphasise my Kigali community work, or lean on my data-viz portfolio…"
+              />
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>{notes.length}/600</div>
+              <div className="aic-actions">
+                <button className="aic-btn" onClick={runCoach}>
+                  <span className="material-symbols-rounded" style={{fontSize:15}}>auto_awesome</span>
+                  Start coaching
+                </button>
+                <button className="aic-btn aic-btn-ghost" onClick={onClose}>Cancel</button>
+              </div>
+            </>
+          )}
+
+          {(phase==='drafting'||phase==='critiquing'||phase==='refining'||phase==='done') && (
+            <>
+              <div className="aic-stages">
+                {stageChip('1. Draft',stageState('drafting'))}
+                <span className="material-symbols-rounded" style={{fontSize:14,color:'var(--text3)'}}>chevron_right</span>
+                {stageChip('2. Self-critique',stageState('critiquing'))}
+                <span className="material-symbols-rounded" style={{fontSize:14,color:'var(--text3)'}}>chevron_right</span>
+                {stageChip('3. Refine',stageState('refining'))}
+              </div>
+
+              {/* Stage 1 — Draft */}
+              {(phase!=='drafting'||draft) ? (draft && (
+                <div className="aic-block aic-fade-in">
+                  <div className="aic-block-head">
+                    <span className="material-symbols-rounded" style={{fontSize:15,color:'var(--accent)'}}>edit_note</span>
+                    Initial draft
+                  </div>
+                  <div className="aic-block-text">{draft}</div>
+                </div>
+              )) : (
+                <div className="aic-block">
+                  <div className="aic-block-head">
+                    <span className="aic-spinner"/> Drafting paragraph from your profile…
+                  </div>
+                </div>
+              )}
+
+              {/* Stage 2 — Critique */}
+              {phase==='critiquing' && !critique && (
+                <div className="aic-block">
+                  <div className="aic-block-head">
+                    <span className="aic-spinner"/> Critiquing the draft against the job…
+                  </div>
+                </div>
+              )}
+              {critique && (
+                <div className="aic-block aic-fade-in">
+                  <div className="aic-block-head">
+                    <span className="material-symbols-rounded" style={{fontSize:15,color:'#D97706'}}>rate_review</span>
+                    Self-critique
+                  </div>
+                  {Array.isArray(critique.strengths)&&critique.strengths.length>0 && (
+                    <div className="aic-crit-section">
+                      <div className="aic-crit-label"><span className="material-symbols-rounded" style={{fontSize:13,color:'var(--green)'}}>check_circle</span>Strengths</div>
+                      {critique.strengths.map((s,i)=>(
+                        <div key={i} className="aic-crit-row">
+                          <span className="material-symbols-rounded" style={{color:'var(--green)'}}>add</span>{s}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {Array.isArray(critique.weaknesses)&&critique.weaknesses.length>0 && (
+                    <div className="aic-crit-section">
+                      <div className="aic-crit-label"><span className="material-symbols-rounded" style={{fontSize:13,color:'#DC2626'}}>warning</span>Fix these</div>
+                      {critique.weaknesses.map((s,i)=>(
+                        <div key={i} className="aic-crit-row">
+                          <span className="material-symbols-rounded" style={{color:'#DC2626'}}>priority_high</span>{s}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {Array.isArray(critique.missing)&&critique.missing.length>0 && (
+                    <div className="aic-crit-section">
+                      <div className="aic-crit-label"><span className="material-symbols-rounded" style={{fontSize:13,color:'#D97706'}}>search</span>Missing from your profile</div>
+                      {critique.missing.map((s,i)=>(
+                        <div key={i} className="aic-crit-row">
+                          <span className="material-symbols-rounded" style={{color:'#D97706'}}>more_horiz</span>{s}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {critique.verdict && <div className="aic-verdict">{critique.verdict}</div>}
+                </div>
+              )}
+
+              {/* Stage 3 — Refined */}
+              {phase==='refining' && !refined && (
+                <div className="aic-block">
+                  <div className="aic-block-head">
+                    <span className="aic-spinner"/> Refining based on the critique…
+                  </div>
+                </div>
+              )}
+              {refined && (
+                <div className="aic-final aic-fade-in">
+                  <div className="aic-block-head" style={{color:'var(--accent)'}}>
+                    <span className="material-symbols-rounded" style={{fontSize:16}}>verified</span>
+                    Refined final draft
+                  </div>
+                  <div className="aic-block-text">{refined}</div>
+                  <div className="aic-actions">
+                    <button className="aic-btn" onClick={copyRefined}>
+                      <span className="material-symbols-rounded" style={{fontSize:15}}>{copied?'check':'content_copy'}</span>
+                      {copied?'Copied!':'Copy text'}
+                    </button>
+                    {onUseRefined && (
+                      <button className="aic-btn aic-btn-ghost" onClick={()=>onUseRefined(refined)}>
+                        <span className="material-symbols-rounded" style={{fontSize:15}}>send</span>
+                        Use in application
+                      </button>
+                    )}
+                    <button className="aic-btn aic-btn-ghost" onClick={runCoach}>
+                      <span className="material-symbols-rounded" style={{fontSize:15}}>refresh</span>
+                      Regenerate
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {phase==='error' && (
+            <div className="aic-block" style={{borderColor:'#DC2626',background:'rgba(220,38,38,.06)'}}>
+              <div className="aic-block-head" style={{color:'#DC2626'}}>
+                <span className="material-symbols-rounded" style={{fontSize:15}}>error</span>Coaching failed
+              </div>
+              <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.5}}>{errMsg}</div>
+              <div className="aic-actions">
+                <button className="aic-btn" onClick={runCoach}>
+                  <span className="material-symbols-rounded" style={{fontSize:15}}>refresh</span>Try again
+                </button>
+                <button className="aic-btn aic-btn-ghost" onClick={onClose}>Close</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  COMPASS PAGE — career-guidance agent with three modes
+//  interview → recommend → prep. Stateful conversation client-side;
+//  server is /api/ai/compass with `mode` param.
+// ══════════════════════════════════════════════════════════════════
+function CompassPage({user}){
+  const profile=user?.profile||{};
+  const firstName=(profile.full_name||user?.user?.email||'there').split(' ')[0];
+  const [stage,setStage]=useState('welcome'); // welcome | interview | recommending | recommended | prepping | prepped
+  const [messages,setMessages]=useState([]); // [{role:'user'|'assistant',content}]
+  const [input,setInput]=useState('');
+  const [thinking,setThinking]=useState(false);
+  const [ready,setReady]=useState(false);
+  const [recs,setRecs]=useState(null); // {summary, recommendations:[{job_id,why,stretch,prep}]}
+  const [allJobs,setAllJobs]=useState([]); // job objects for lookup
+  const [prepFor,setPrepFor]=useState(null); // {job, plan}
+  const [errMsg,setErrMsg]=useState('');
+  const endRef=useRef(null);
+
+  // Inject scoped CSS
+  useEffect(()=>{
+    if(document.getElementById('aco-css')) return;
+    const s=document.createElement('style');s.id='aco-css';
+    s.textContent=`
+      .aco-page{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+      .aco-hero{background:linear-gradient(135deg,#0A2E5C 0%,#1a4a80 55%,#2563EB 100%);border-radius:16px;padding:16px 20px;margin-bottom:14px;color:#fff;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+      .aco-hero-icon{width:48px;height:48px;background:rgba(255,255,255,.18);border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+      .aco-hero-title{font-size:18px;font-weight:800;margin:0 0 3px;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.02em;}
+      .aco-hero-sub{font-size:12.5px;opacity:.85;margin:0;}
+      .aco-content{flex:1;min-height:0;overflow-y:auto;padding-bottom:20px;display:flex;flex-direction:column;}
+      .aco-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;}
+      .aco-chat{background:var(--card);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
+      .aco-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
+      .aco-msg{display:flex;gap:10px;align-items:flex-start;max-width:88%;}
+      .aco-msg.user{align-self:flex-end;flex-direction:row-reverse;}
+      .aco-bubble{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.55;word-break:break-word;}
+      .aco-msg.user .aco-bubble{background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;border-bottom-right-radius:3px;white-space:pre-wrap;}
+      .aco-msg.ai .aco-bubble{background:var(--bg2);color:var(--text);border-bottom-left-radius:3px;}
+      .aco-av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;overflow:hidden;}
+      .aco-msg.user .aco-av{background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;}
+      .aco-msg.ai .aco-av img{width:100%;height:100%;}
+      .aco-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;}
+      .aco-input{flex:1;padding:9px 13px;border-radius:18px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;resize:none;max-height:120px;line-height:1.4;}
+      .aco-input:focus{border-color:var(--accent);}
+      .aco-send{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+      .aco-send:disabled{opacity:.4;cursor:default;}
+      .aco-typing{display:flex;gap:4px;align-items:center;padding:6px 14px;}
+      .aco-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aco-bounce .85s infinite;}
+      .aco-dot:nth-child(2){animation-delay:.17s;} .aco-dot:nth-child(3){animation-delay:.34s;}
+      @keyframes aco-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+      .aco-rec{border:1.5px solid var(--border);border-radius:14px;padding:16px 18px;margin-top:12px;background:var(--card);transition:border-color .15s,transform .12s;}
+      .aco-rec:hover{border-color:var(--accent);transform:translateY(-1px);}
+      .aco-rec-rank{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;background:rgba(79,70,229,.1);color:var(--accent);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;}
+      .aco-rec-title{font-size:16px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;color:var(--text);letter-spacing:-.02em;margin-bottom:2px;}
+      .aco-rec-co{font-size:12.5px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+      .aco-rec-why{font-size:13.5px;color:var(--text);line-height:1.55;margin-bottom:10px;}
+      .aco-rec-stretch{font-size:12.5px;color:var(--text2);font-style:italic;padding-left:10px;border-left:3px solid var(--accent);margin-bottom:10px;line-height:1.5;}
+      .aco-prep-list{padding:0;margin:0;list-style:none;}
+      .aco-prep-list li{display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:13px;color:var(--text2);line-height:1.5;}
+      .aco-prep-list li .material-symbols-rounded{font-size:15px;color:var(--accent);flex-shrink:0;margin-top:2px;}
+      .aco-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+      .aco-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid var(--accent);background:var(--accent);color:#fff;}
+      .aco-btn-ghost{background:transparent;color:var(--accent);}
+      .aco-summary{padding:12px 14px;border-left:3px solid var(--accent);background:rgba(79,70,229,.06);border-radius:0 8px 8px 0;font-size:13.5px;color:var(--text);line-height:1.6;margin-bottom:8px;}
+      .aco-prep-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:14px;}
+      .aco-prep-h{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+      .aco-prep-h .material-symbols-rounded{font-size:14px;color:var(--accent);}
+      .aco-prep-fit{font-size:14px;color:var(--text);line-height:1.6;}
+      .aco-prep-ul{list-style:none;padding:0;margin:0;}
+      .aco-prep-ul li{padding:6px 0;font-size:13.5px;color:var(--text2);line-height:1.55;display:flex;gap:8px;align-items:flex-start;}
+      .aco-prep-ul li::before{content:'';flex-shrink:0;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-top:9px;}
+      @media(max-width:640px){
+        .aco-hero{padding:14px 16px;border-radius:12px;}
+        .aco-hero-title{font-size:15px;} .aco-hero-sub{font-size:12px;}
+        .aco-hero-icon{width:40px;height:40px;}
+        .aco-input{font-size:16px;}
+        .aco-rec{padding:14px 16px;}
+        .aco-rec-title{font-size:14.5px;}
+      }
+    `;
+    document.head.appendChild(s);
+  },[]);
+
+  // Auto-scroll chat to bottom on new messages / typing
+  useEffect(()=>{
+    if(endRef.current) endRef.current.scrollIntoView({behavior:'smooth',block:'end'});
+  },[messages,thinking]);
+
+  function startInterview(){
+    const greeting=`Hi ${firstName}, I'm Compass. I'll ask a few short questions to understand what you're aiming for, then surface 3 live opportunities on ALUHub that fit. Ready? Tell me — what problem in the world feels most worth your time right now?`;
+    setMessages([{role:'assistant',content:greeting}]);
+    setStage('interview');
+  }
+
+  async function sendMessage(){
+    const text=input.trim();
+    if(!text||thinking) return;
+    const next=[...messages,{role:'user',content:text}];
+    setMessages(next);
+    setInput('');
+    setThinking(true);
+    setErrMsg('');
+    try{
+      const res=await fetch(getApiUrl()+'/api/ai/compass',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          mode:'interview',
+          messages:next,
+          profile:{
+            major:profile.major,
+            year:profile.year,
+            bio:profile.bio,
+            desired_roles:profile.desired_roles,
+            preferred_industries:profile.preferred_industries,
+            skills:profile.skills,
+          },
+        }),
+      });
+      if(!res.ok){
+        const err=await res.json().catch(()=>({}));
+        throw new Error(err.error||'Compass server returned '+res.status);
+      }
+      const data=await res.json();
+      const reply=data.text||'';
+      setMessages(m=>[...m,{role:'assistant',content:reply}]);
+      if(data.ready) setReady(true);
+    }catch(e){
+      console.warn('[Compass interview] failed:',e);
+      setErrMsg(e.message||'Compass is unavailable right now.');
+      setMessages(m=>[...m,{role:'assistant',content:'Sorry — I hit an error reaching the server. Try again in a moment.'}]);
+    }finally{
+      setThinking(false);
+    }
+  }
+
+  async function buildRecommendations(){
+    setStage('recommending');
+    setErrMsg('');
+    try{
+      const jobs=await dbGetInternships();
+      const visible=jobs.filter(j=>!String(j.id||'').startsWith('hc-'));
+      setAllJobs(visible);
+      if(!visible.length){
+        setErrMsg('No live listings yet — check back once companies post.');
+        setStage('interview');
+        return;
+      }
+      const candidatePayload=visible.slice(0,30).map(j=>({
+        id:j.id,
+        title:j.title,
+        description:j.description,
+        type:j.type||j.listing_type,
+        location:j.loc||j.location,
+        tags:j.tags||[],
+      }));
+      const res=await fetch(getApiUrl()+'/api/ai/compass',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          mode:'recommend',
+          messages,
+          profile:{
+            major:profile.major,year:profile.year,bio:profile.bio,
+            desired_roles:profile.desired_roles,preferred_industries:profile.preferred_industries,skills:profile.skills,
+          },
+          candidateJobs:candidatePayload,
+        }),
+      });
+      if(!res.ok){
+        const err=await res.json().catch(()=>({}));
+        throw new Error(err.error||'Compass server returned '+res.status);
+      }
+      const data=await res.json();
+      setRecs(data);
+      setStage('recommended');
+    }catch(e){
+      console.warn('[Compass recommend] failed:',e);
+      setErrMsg(e.message||'Could not build recommendations.');
+      setStage('interview');
+    }
+  }
+
+  async function buildPrep(rec){
+    const jobRow=allJobs.find(j=>j.id===rec.job_id);
+    if(!jobRow){toast('Job no longer available');return;}
+    setStage('prepping');
+    setPrepFor({job:jobRow,plan:null});
+    try{
+      const res=await fetch(getApiUrl()+'/api/ai/compass',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          mode:'prep',
+          profile:{
+            major:profile.major,year:profile.year,bio:profile.bio,
+            desired_roles:profile.desired_roles,preferred_industries:profile.preferred_industries,skills:profile.skills,
+          },
+          targetJob:{
+            id:jobRow.id,
+            title:jobRow.title,
+            company:jobRow.co||jobRow.company,
+            description:jobRow.description,
+            tags:jobRow.tags,
+            type:jobRow.listing_type||jobRow.type,
+            location:jobRow.loc||jobRow.location,
+          },
+        }),
+      });
+      if(!res.ok){
+        const err=await res.json().catch(()=>({}));
+        throw new Error(err.error||'Prep server returned '+res.status);
+      }
+      const data=await res.json();
+      setPrepFor({job:jobRow,plan:data});
+      setStage('prepped');
+    }catch(e){
+      console.warn('[Compass prep] failed:',e);
+      setErrMsg(e.message||'Could not build prep plan.');
+      setStage('recommended');
+    }
+  }
+
+  function openJob(rec){
+    const jobRow=allJobs.find(j=>j.id===rec.job_id);
+    if(!jobRow){toast('Job no longer available');return;}
+    window.__pendingJobToOpen=jobRow.id;
+    if(window.__setPage) window.__setPage('internships');
+  }
+
+  function resetCompass(){
+    setStage('welcome');
+    setMessages([]);
+    setReady(false);
+    setRecs(null);
+    setAllJobs([]);
+    setPrepFor(null);
+    setErrMsg('');
+  }
+
+  return (
+    <div className="main aco-page">
+      <div className="aco-hero">
+        <div className="aco-hero-icon">
+          <img src={CLAUDE_LOGO} alt="Claude" style={{width:24,height:24}}/>
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div className="aco-hero-title">Compass · AI Career Guide</div>
+          <div className="aco-hero-sub">Short interview → 3 live opportunities → personal prep plan, in one flow.</div>
+        </div>
+        {stage!=='welcome' && (
+          <button className="aco-btn aco-btn-ghost" style={{color:'#fff',borderColor:'rgba(255,255,255,.4)'}} onClick={resetCompass} title="Start over">
+            <span className="material-symbols-rounded" style={{fontSize:15}}>refresh</span>Restart
+          </button>
+        )}
+      </div>
+
+      <div className="aco-content">
+        {stage==='welcome' && (
+          <div className="aco-card">
+            <div style={{fontSize:14,color:'var(--text2)',lineHeight:1.7,marginBottom:14}}>
+              Compass is a three-step agent powered by Claude:
+              <ol style={{margin:'10px 0 0 18px',padding:0,color:'var(--text)'}}>
+                <li style={{marginBottom:6}}><strong>Interview</strong> — a short conversation about what you actually want.</li>
+                <li style={{marginBottom:6}}><strong>Recommend</strong> — Compass picks 3 live ALUHub roles that fit, with reasoning.</li>
+                <li><strong>Prep plan</strong> — Compass builds a personal plan for the role you pick.</li>
+              </ol>
+            </div>
+            <button className="aco-btn" onClick={startInterview}>
+              <span className="material-symbols-rounded" style={{fontSize:16}}>auto_awesome</span>Start the interview
+            </button>
+          </div>
+        )}
+
+        {stage==='interview' && (
+          <div className="aco-chat">
+            <div className="aco-msgs">
+              {messages.map((m,i)=>(
+                <div key={i} className={'aco-msg '+(m.role==='user'?'user':'ai')}>
+                  <div className="aco-av">
+                    {m.role==='user'
+                      ? (firstName.slice(0,1).toUpperCase())
+                      : <img src={CLAUDE_LOGO} alt="Claude"/>
+                    }
+                  </div>
+                  <div className="aco-bubble">{m.content}</div>
+                </div>
+              ))}
+              {thinking && (
+                <div className="aco-msg ai">
+                  <div className="aco-av"><img src={CLAUDE_LOGO} alt="Claude"/></div>
+                  <div className="aco-bubble">
+                    <div className="aco-typing">
+                      <span className="aco-dot"/><span className="aco-dot"/><span className="aco-dot"/>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {ready && !thinking && (
+                <div style={{padding:'10px 4px',marginTop:6,textAlign:'center'}}>
+                  <button className="aco-btn" onClick={buildRecommendations}>
+                    <span className="material-symbols-rounded" style={{fontSize:15}}>recommend</span>
+                    I've answered enough — show me matches
+                  </button>
+                </div>
+              )}
+              {errMsg && <div style={{fontSize:12,color:'#DC2626',padding:'6px 8px'}}>{errMsg}</div>}
+              <div ref={endRef}/>
+            </div>
+            <div className="aco-input-row">
+              <textarea
+                className="aco-input"
+                value={input}
+                onChange={e=>setInput(e.target.value)}
+                onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}}
+                placeholder="Type your reply…"
+                rows={1}
+                disabled={thinking}
+              />
+              <button className="aco-send" onClick={sendMessage} disabled={!input.trim()||thinking}>
+                <span className="material-symbols-rounded" style={{fontSize:18}}>arrow_upward</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {stage==='recommending' && (
+          <div className="aco-card" style={{textAlign:'center',padding:'40px 24px'}}>
+            <div style={{width:44,height:44,borderRadius:'50%',border:'3.5px solid var(--border)',borderTopColor:'var(--accent)',animation:'spin .8s linear infinite',margin:'0 auto 16px'}}/>
+            <div style={{fontSize:14,color:'var(--text2)',fontWeight:600}}>Compass is picking your top 3…</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:6}}>Reading your conversation, profile, and every live listing.</div>
+          </div>
+        )}
+
+        {stage==='recommended' && recs && (
+          <>
+            {recs.summary && (
+              <div className="aco-summary">
+                <strong>What I heard:</strong> {recs.summary}
+              </div>
+            )}
+            {recs.recommendations.length===0 && (
+              <div className="aco-card" style={{textAlign:'center'}}>
+                <div style={{fontSize:14,color:'var(--text2)'}}>Compass couldn't find strong matches in current listings — try again in a few days as new roles post.</div>
+              </div>
+            )}
+            {recs.recommendations.map((r,i)=>{
+              const jobRow=allJobs.find(j=>j.id===r.job_id);
+              const title=jobRow?.title||'Recommended role';
+              const co=jobRow?.co||jobRow?.company||'';
+              return (
+                <div key={r.job_id} className="aco-rec">
+                  <span className="aco-rec-rank">
+                    <span className="material-symbols-rounded" style={{fontSize:13}}>looks_{['one','two','three'][i]||'one'}</span>
+                    Top pick {i+1}
+                  </span>
+                  <div className="aco-rec-title">{title}</div>
+                  {co && (
+                    <div className="aco-rec-co">
+                      <span className="material-symbols-rounded" style={{fontSize:13,color:'var(--text3)'}}>apartment</span>
+                      {co}
+                      {jobRow?.loc && <span style={{color:'var(--text3)'}}> · {jobRow.loc}</span>}
+                    </div>
+                  )}
+                  {r.why && <div className="aco-rec-why">{r.why}</div>}
+                  {r.stretch && <div className="aco-rec-stretch">{r.stretch}</div>}
+                  {Array.isArray(r.prep)&&r.prep.length>0 && (
+                    <ul className="aco-prep-list">
+                      {r.prep.map((p,j)=>(
+                        <li key={j}>
+                          <span className="material-symbols-rounded">check_circle</span>{p}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="aco-actions">
+                    <button className="aco-btn" onClick={()=>openJob(r)}>
+                      <span className="material-symbols-rounded" style={{fontSize:14}}>open_in_new</span>View listing
+                    </button>
+                    <button className="aco-btn aco-btn-ghost" onClick={()=>buildPrep(r)}>
+                      <span className="material-symbols-rounded" style={{fontSize:14}}>auto_stories</span>Build prep plan
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {stage==='prepping' && (
+          <div className="aco-card" style={{textAlign:'center',padding:'40px 24px'}}>
+            <div style={{width:44,height:44,borderRadius:'50%',border:'3.5px solid var(--border)',borderTopColor:'var(--accent)',animation:'spin .8s linear infinite',margin:'0 auto 16px'}}/>
+            <div style={{fontSize:14,color:'var(--text2)',fontWeight:600}}>Building your prep plan…</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:6}}>{prepFor?.job?.title}</div>
+          </div>
+        )}
+
+        {stage==='prepped' && prepFor?.plan && (
+          <>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+              <button className="aco-btn aco-btn-ghost" onClick={()=>setStage('recommended')}>
+                <span className="material-symbols-rounded" style={{fontSize:14}}>arrow_back</span>Back to picks
+              </button>
+            </div>
+            <div className="aco-prep-section">
+              <div className="aco-prep-h"><span className="material-symbols-rounded">flag</span>Prep plan for {prepFor.job.title}</div>
+              {prepFor.plan.fit_summary && <div className="aco-prep-fit">{prepFor.plan.fit_summary}</div>}
+            </div>
+            {prepFor.plan.skills_to_build?.length>0 && (
+              <div className="aco-prep-section">
+                <div className="aco-prep-h"><span className="material-symbols-rounded">build</span>Skills to build</div>
+                <ul className="aco-prep-ul">{prepFor.plan.skills_to_build.map((s,i)=><li key={i}>{s}</li>)}</ul>
+              </div>
+            )}
+            {prepFor.plan.talking_points?.length>0 && (
+              <div className="aco-prep-section">
+                <div className="aco-prep-h"><span className="material-symbols-rounded">forum</span>Talking points (use in cover letter / interview)</div>
+                <ul className="aco-prep-ul">{prepFor.plan.talking_points.map((s,i)=><li key={i}>{s}</li>)}</ul>
+              </div>
+            )}
+            {prepFor.plan.interview_questions?.length>0 && (
+              <div className="aco-prep-section">
+                <div className="aco-prep-h"><span className="material-symbols-rounded">help</span>Likely interview questions</div>
+                <ul className="aco-prep-ul">{prepFor.plan.interview_questions.map((s,i)=><li key={i}>{s}</li>)}</ul>
+              </div>
+            )}
+            {prepFor.plan.first_actions?.length>0 && (
+              <div className="aco-prep-section" style={{borderColor:'var(--accent)',background:'rgba(79,70,229,.04)'}}>
+                <div className="aco-prep-h" style={{color:'var(--accent)'}}><span className="material-symbols-rounded">rocket_launch</span>Do these today</div>
+                <ul className="aco-prep-ul">{prepFor.plan.first_actions.map((s,i)=><li key={i}>{s}</li>)}</ul>
+              </div>
+            )}
+            <div className="aco-actions" style={{padding:'4px 4px 18px'}}>
+              <button className="aco-btn" onClick={()=>{window.__pendingJobToOpen=prepFor.job.id;if(window.__setPage)window.__setPage('internships');}}>
+                <span className="material-symbols-rounded" style={{fontSize:14}}>open_in_new</span>Open the listing
+              </button>
+              <button className="aco-btn aco-btn-ghost" onClick={()=>setStage('recommended')}>
+                <span className="material-symbols-rounded" style={{fontSize:14}}>arrow_back</span>Back to picks
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
   const [page,setPage]=useState((initialUser?.userType==='company'||initialUser?.userType==='school')?'company_dashboard':'dashboard');
@@ -12935,6 +13933,7 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
     {id:'internships',icon:'work',label:'Internships & Jobs',badge:liveCounts.jobs||null},
     {id:'my_applications',icon:'task_alt',label:'My Applications'},
     {id:'ai_insights',icon:'auto_awesome',label:'AI Insights',badge:'NEW'},
+    {id:'compass',icon:'explore',label:'Compass',badge:'NEW'},
     {id:'messages',icon:'chat_bubble',label:'Messages',badge:msgUnread||null},
     {id:'notifications',icon:'notifications',label:'Notifications',badge:notifCounts.total||null},
     {id:'skills',icon:'school',label:'Skills Market'},
@@ -13021,7 +14020,7 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
   });
 
   // Guard: strictly route each user type to only their allowed pages
-  const STUDENT_PAGES=['dashboard','internships','my_applications','ai_insights','skills','survival','resources','companies','housing'];
+  const STUDENT_PAGES=['dashboard','internships','my_applications','ai_insights','compass','skills','survival','resources','companies','housing'];
   const COMPANY_PAGES=['company_dashboard','company_applications','company_listings','company_analytics','post_job'];
   const SHARED_PAGES=['messages','notifications','profile'];
 
@@ -13037,6 +14036,7 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
     internships:<Internships setPage={setPage} onViewCompany={job=>{setViewCompanyFromJob(job);setPage('companies');}}/>,
     my_applications:<MyApplications user={user} onMessage={handleMessage}/>,
     ai_insights:<AIInsightsPage user={user}/>,
+    compass:<CompassPage user={user}/>,
     skills:<Skills/>,
     survival:<SurvivalGuide/>,
     resources:<Resources/>,
