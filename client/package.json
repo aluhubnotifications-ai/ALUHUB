@@ -1,0 +1,22 @@
+{
+  "name": "aluhub-client",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ALU Hub web client — Vite + React + TypeScript",
+  "scripts": {
+    "build:legacy": "node scripts/build-legacy.mjs",
+    "dev": "npm run build:legacy && vite",
+    "build": "npm run build:legacy && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.1",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.2"
+  }
+}

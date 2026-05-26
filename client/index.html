@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ALUHub — Student Platform for ALU</title>
+<meta name="description" content="ALUHub — the all-in-one platform for ALU students. Find internships, connect with companies, discover housing, skills, and resources."/>
+<meta name="application-name" content="ALUHub"/>
+
+<!-- Open Graph -->
+<meta property="og:title" content="ALUHub"/>
+<meta property="og:description" content="Internships, companies, housing & more for ALU students."/>
+<meta property="og:image" content="/logo.svg"/>
+<meta property="og:type" content="website"/>
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="/logo.svg"/>
+<link rel="apple-touch-icon" href="/logo.svg"/>
+<link rel="manifest" href="/manifest.json"/>
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,400,1,0" rel="stylesheet"/>
+<link rel="stylesheet" href="/app/ALUHub_Auth.css?v=20260524-mobile18"/>
+<link rel="stylesheet" href="/app/ALUHub.css?v=20260524-mobile18"/>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- Runtime config injected from server/client/.env at build time -->
+<script>
+  window.__ALUHUB_ENV = {
+    API_URL: '%VITE_API_URL%',
+    SUPABASE_URL: '%VITE_SUPABASE_URL%',
+    SUPABASE_ANON_KEY: '%VITE_SUPABASE_ANON_KEY%',
+    VAPID_PUBLIC_KEY: 'BMyYawhNEw_EiE26_xOtyUxyWqZappamhlEAmOQYb7sHu9_K8vF5fmTeXRXXZKckEJG9wpLMaERmMID8SVKOMk4'
+  };
+</script>
+
+<!-- React (production, minified) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- Legacy UI — pre-compiled (no in-browser Babel) -->
+<script src="/app/ALUHub.js?v=20260524-mobile18"></script>
+<script src="/app/ALUHub_Auth.js?v=20260524-mobile18"></script>
+
+<!-- PWA: Register service worker for offline support & push notifications -->
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then((reg) => console.log('[PWA] Service worker registered'))
+      .catch((err) => console.log('[PWA] Service worker registration failed:', err));
+  }
+
+  // PWA: Show install prompt + request notification permission
+  let installPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    console.log('[PWA] Install prompt ready');
+    // Expose globally so the app can trigger install on user action
+    window.__showInstallPrompt = () => {
+      if (installPrompt) {
+        installPrompt.prompt();
+        installPrompt = null;
+      }
+    };
+  });
+
+  // Request notification permission once user interacts with the app.
+  // If the user grants permission, immediately register a push token —
+  // otherwise the account ends up signed-in but with no token in
+  // push_tokens, and the server has nothing to fan out to. (This is the
+  // root cause of "push works for some accounts but not others": the
+  // accounts that never reloaded after granting permission silently
+  // missed registration.)
+  function requestNotificationPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'default') return;
+    Notification.requestPermission().then((perm) => {
+      if (perm !== 'granted') return;
+      console.log('[PWA] Notification permission granted');
+      const apiUrl = window.__ALUHUB_ENV?.API_URL;
+      const userId = window.__ALU_USER_ID;
+      if (apiUrl && userId && typeof window.__registerWebPush === 'function') {
+        window.__registerWebPush(apiUrl, userId).catch(() => {});
+      }
+    });
+  }
+
+  // Once the app loads and user is authenticated, register for web push.
+  // userId is passed explicitly so we never POST a `userId: undefined`
+  // body when window.__ALU_USER_ID hasn't been set yet by the app.
+  window.__registerWebPush = async function (apiUrl, userId) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.log('[PWA] Push notifications not supported');
+      return;
+    }
+
+    const uid = userId || window.__ALU_USER_ID;
+    if (!uid) {
+      console.warn('[PWA] Skipping push registration — no userId yet');
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      console.log('[PWA] Notification permission denied');
+      return;
+    }
+    if (Notification.permission === 'default') {
+      // Ask now. If granted, requestNotificationPermission's own
+      // .then() will re-call this function; if denied, we just bail.
+      requestNotificationPermission();
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const vapidKey = window.__ALUHUB_ENV?.VAPID_PUBLIC_KEY;
+
+      if (!vapidKey) {
+        console.warn('[PWA] VAPID_PUBLIC_KEY not configured');
+        return;
+      }
+
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+
+      const token = JSON.stringify(subscription.toJSON());
+      const res = await fetch(apiUrl + '/api/push/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token, platform: 'web', userId: uid }),
+      });
+
+      if (res.ok) {
+        console.log('[PWA] Web push registered for', uid);
+      } else {
+        const txt = await res.text().catch(() => '');
+        console.warn('[PWA] Failed to register push token:', res.status, txt.slice(0, 200));
+      }
+    } catch (err) {
+      console.warn('[PWA] Web push registration error:', err.message);
+    }
+  };
+
+  // Helper to convert base64url to Uint8Array (for VAPID key)
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    return new Uint8Array([...rawData].map((char) => char.charCodeAt(0)));
+  }
+
+  // Trigger notification permission request on first user interaction
+  document.addEventListener('click', requestNotificationPermission, { once: true });
+</script>
+
+</body>
+</html>

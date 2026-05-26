@@ -1,0 +1,49 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background gradient: deep navy → midnight -->
+    <linearGradient id="bg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1d4480"/>
+      <stop offset="100%" stop-color="#071830"/>
+    </linearGradient>
+    <!-- Radial inner highlight (top-center glow) -->
+    <radialGradient id="glow" cx="20" cy="8" r="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#0B2447" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Hub node gradient: sky blue → electric blue -->
+    <linearGradient id="hub" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="40" height="40" rx="9" fill="url(#bg)"/>
+  <rect width="40" height="40" rx="9" fill="url(#glow)"/>
+  <!-- Subtle inset border for depth -->
+  <rect x="0.75" y="0.75" width="38.5" height="38.5" rx="8.25" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+
+  <!-- ── Letter A (ALU) ── -->
+  <!-- Left leg -->
+  <line x1="7" y1="32.5" x2="20" y2="8" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Right leg -->
+  <line x1="33" y1="32.5" x2="20" y2="8" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Crossbar (slightly transparent so nodes pop) -->
+  <line x1="12" y1="23" x2="28" y2="23" stroke="rgba(255,255,255,0.65)" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- ── Hub node — apex (top of A) ── -->
+  <!-- Outer glow ring -->
+  <circle cx="20" cy="8" r="6.5" fill="url(#hub)" opacity="0.20"/>
+  <!-- Main node -->
+  <circle cx="20" cy="8" r="4.5" fill="url(#hub)"/>
+  <!-- Inner white dot -->
+  <circle cx="20" cy="8" r="2.2" fill="white"/>
+
+  <!-- ── Hub node — crossbar centre ── -->
+  <!-- Outer glow ring -->
+  <circle cx="20" cy="23" r="5" fill="url(#hub)" opacity="0.18"/>
+  <!-- Main node -->
+  <circle cx="20" cy="23" r="3.4" fill="url(#hub)"/>
+  <!-- Inner white dot -->
+  <circle cx="20" cy="23" r="1.6" fill="white"/>
+</svg>

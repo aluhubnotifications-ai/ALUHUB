@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Web cookies + service-worker cache live in webview/; let backup
+         exclude them so a restore doesn't carry stale auth tokens. -->
+    <exclude domain="database" path="webview/" />
+    <exclude domain="file" path="app_webview/" />
+</full-backup-content>

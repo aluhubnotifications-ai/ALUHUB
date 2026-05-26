@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- mirrors the web CSS variables (navy / bg / accent2) so the
+         splash window and any non-WebView chrome match the web exactly -->
+    <color name="navy">#0B2447</color>
+    <color name="navy_dark">#071830</color>
+    <color name="accent_light">#7EB3F8</color>
+    <color name="bg">#F4F7FB</color>
+    <color name="white">#FFFFFF</color>
+    <color name="ic_launcher_background">#0B2447</color>
+</resources>

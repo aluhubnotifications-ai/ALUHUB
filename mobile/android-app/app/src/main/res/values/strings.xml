@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ALUHub</string>
+    <!-- web_app_url is generated at build time via resValue in build.gradle.kts -->
+</resources>

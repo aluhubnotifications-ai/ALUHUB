@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- bold "A" mark on a transparent bg (the adaptive layer adds bg color) -->
+    <group android:translateX="32" android:translateY="22">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M22,4 L34,58 L25,58 L22,46 L8,46 L5,58 L-4,58 L8,4 Z M20,38 L15,18 L10,38 Z" />
+        <path
+            android:fillColor="#7EB3F8"
+            android:pathData="M22,38 L25,38 L28,58 L22,58 Z" />
+    </group>
+</vector>

@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: aluhub-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_ORIGINS
+        sync: false           # set in Render dashboard
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false           # Supabase Dashboard → Settings → API → Legacy JWT secret
+      - key: ACCESS_TOKEN_TTL
+        value: 1h
+      - key: REFRESH_TOKEN_TTL_DAYS
+        value: "30"
+      - key: APP_URL
+        sync: false           # e.g. https://aluhub.pages.dev — used in verification email links
+      - key: ANTHROPIC_API_KEY
+        sync: false           # set in Render dashboard
+      - key: BREVO_API_KEY
+        sync: false           # set in Render dashboard
+      - key: EMAIL_FROM_NAME
+        value: ALUHub
+      - key: EMAIL_FROM_ADDR
+        value: noreply@aluhub.com
+      # Firebase Cloud Messaging — Android push notifications.
+      # FCM_SERVICE_ACCOUNT_PATH must point at a Render "Secret File"
+      # whose contents are the Firebase Admin SDK JSON for project
+      # FCM_PROJECT_ID. Create the secret file in Render dashboard →
+      # Environment → Secret Files (NOT env vars — the JSON is multiline).
+      - key: FCM_PROJECT_ID
+        sync: false           # set in Render dashboard, e.g. aluhub-da1f8
+      - key: FCM_SERVICE_ACCOUNT_PATH
+        value: /etc/secrets/firebase-service-account.json
