@@ -14124,7 +14124,7 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
             ))}
           </nav>
 
-          {/* Get the app — PWA install (hidden inside the installed WebView) */}
+          {/* Get the app — PWA install + direct APK (hidden inside the installed WebView) */}
           {!/ALUHubAndroid/.test(navigator.userAgent)&&(
             <div className="sb-getapp-group">
               {/* PWA: Install as app — works on all phones, desktops, no APK needed */}
@@ -14139,6 +14139,21 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
                   <span className="sb-getapp-sub">All devices</span>
                 </span>
               </button>
+
+              {/* Android: Direct APK from GitHub release (built by CI) */}
+              <a
+                className="sb-getapp-card"
+                href={getApiUrl()+'/api/download/android'}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Download APK — Android will show 'Unknown app', tap Install anyway"
+              >
+                <span className="material-symbols-rounded sb-getapp-icon">android</span>
+                <span className="sb-getapp-text">
+                  <span className="sb-getapp-title">APK File</span>
+                  <span className="sb-getapp-sub">Android · direct download</span>
+                </span>
+              </a>
             </div>
           )}
 
