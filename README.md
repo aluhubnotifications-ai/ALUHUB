@@ -48,6 +48,18 @@ Internship opportunities are scattered across **too many places:**
 
 **We built it because ALU deserves better.**
 
+### Why Built for ALU, Not the Whole World?
+
+**ALU is different. So ALUHub is different.**
+
+- **ALU students have year levels:** Year 1, 2, 3, 4 — not all years see all jobs. ALUHub filters by year automatically.
+- **ALU has partner companies:** Andela, Flutterwave, MPharma, Equity Bank — they know ALU. ALUHub curates their opportunities.
+- **ALU students are in Africa:** Job boards built for the US show Indian salaries, UK visa requirements. ALUHub shows Africa-relevant opportunities.
+- **ALU has a career office:** ALU Career Services can post directly, control who sees what, and see where students get hired. Generic job boards can't do this.
+- **ALU students are serious:** They're looking to build Africa. ALUHub connects them with companies building in Africa.
+
+**Other schools can use it too.** But ALUHub is built around ALU's structure, values, and students first.
+
 ### What You Get (The Win)
 
 **Instead of:** 15 min filtering → 2–3 applications → hoping one works  
@@ -71,6 +83,28 @@ Internship opportunities are scattered across **too many places:**
 4. **Optional:** Use AI → See how good a fit it is
 5. **You** → Click "Apply" → form on our app OR company's site
 6. **Done** → Company gets your application
+
+### Why ALUHub, Not LinkedIn?
+
+**You're thinking: "Why not just use LinkedIn?"**
+
+**Good question. Here's the answer:**
+
+| | LinkedIn | ALUHub |
+|---|---|---|
+| **Internships for your year?** | No — see everything, filter yourself | Yes — only your year |
+| **How many internships?** | 1000s for Africa, 100s look relevant | All curated by ALU for ALU students |
+| **Time to find one job** | 10–15 minutes (scroll, scroll, scroll) | 1–2 minutes (scroll, done) |
+| **AI tells you if you fit?** | No — LinkedIn guesses | Yes — Claude scores 87% match? 45%? |
+| **Know the company?** | Maybe — LinkedIn ads aren't honest | Yes — Claude researches them honestly |
+| **Privacy?** | LinkedIn sells your data to companies | We don't sell, we don't share |
+| **Built for you?** | Built for everyone (India, US, Nigeria...) | Built for ALU students |
+| **Interview prep?** | LinkedIn Learning costs $$ | Free AI interview simulator |
+| **Just internships?** | LinkedIn has jobs, gigs, ads, clutter | We focus only on internships |
+
+**Real difference:** LinkedIn is a global job board. ALUHub is ALU's internship platform. One filters for everyone. One filters for you.
+
+---
 
 ### How ALU Runs It
 
