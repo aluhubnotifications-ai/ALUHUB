@@ -603,59 +603,69 @@ function PrivacyPolicyModal({ onClose }) {
           <button onClick={onClose} style={{background:'#f3f4f6',border:'none',borderRadius:8,width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:18,color:'#6b7280'}}>✕</button>
         </div>
         <div style={{overflowY:'auto',padding:'20px 24px',fontSize:13.5,color:'#374151',lineHeight:1.75}}>
-          <p style={{fontSize:11,color:'#9ca3af',marginBottom:18}}>Last updated: May 25, 2026 · Drafted with Claude AI assistance</p>
+          <p style={{fontSize:11,color:'#9ca3af',marginBottom:18}}>Last updated: May 27, 2026 · Drafted with Claude AI assistance</p>
 
           <h3 style={{fontSize:14,fontWeight:700,color:'#0A2E5C',marginBottom:6,marginTop:0}}>1. Who We Are</h3>
-          <p style={{marginBottom:16}}>ALUHub is a career platform built exclusively for students and alumni of the African Leadership University (ALU). We connect students with internships, full-time roles, and career resources from verified employers across Africa and beyond.</p>
+          <p style={{marginBottom:16}}>ALUHub is a career platform built exclusively for students and alumni of the African Leadership University (ALU) and CMU-Africa. We connect students with internships, full-time roles, and career resources from verified employers across Africa and beyond.</p>
 
           <h3 style={{fontSize:14,fontWeight:700,color:'#0A2E5C',marginBottom:6}}>2. Information We Collect</h3>
           <p style={{marginBottom:8}}><strong>Account data:</strong> Name, email address, and password. Passwords are hashed using bcrypt (cost 12) — we never store or transmit them in plain text.</p>
           <p style={{marginBottom:8}}><strong>Profile data:</strong> School, program, year, biography, career preferences (desired roles, industries, skills), LinkedIn/GitHub links, profile photo, and CV. All optional except school and email.</p>
           <p style={{marginBottom:16}}><strong>Usage data:</strong> Pages visited and features used, collected for platform improvement only. This data is never sold or shared with advertisers.</p>
 
-          <h3 style={{fontSize:14,fontWeight:700,color:'#0A2E5C',marginBottom:6}}>3. Claude AI — Exactly What We Share</h3>
-          <p style={{marginBottom:8}}>ALUHub uses Anthropic's Claude AI for three features: job matching, career chat, and CV tips. We take data minimisation seriously.</p>
+          <h3 style={{fontSize:14,fontWeight:700,color:'#0A2E5C',marginBottom:6}}>3. Claude AI — Our 6 Agents & Exactly What We Share</h3>
+          <p style={{marginBottom:8}}>ALUHub uses Anthropic's Claude AI across six specialised agents. We cache AI results in our database to avoid re-processing your data unnecessarily.</p>
+          <ul style={{marginBottom:10,paddingLeft:20}}>
+            <li><strong>Match</strong> — scores every job listing against your career profile. Results are stored and reused across other features so we never re-score the same job twice.</li>
+            <li><strong>Rank</strong> — orders your job feed by personal fit using cached match scores.</li>
+            <li><strong>Chat</strong> — answers career questions using your profile as context for personalised advice.</li>
+            <li><strong>Coach</strong> — writes, critiques, and refines a cover-letter paragraph for a specific job in three internal stages.</li>
+            <li><strong>Company</strong> — researches a company and returns honest insights to help you prepare.</li>
+            <li><strong>Compass</strong> — a multi-turn career counsellor that interviews you, recommends top opportunities, and builds a personalised prep plan.</li>
+          </ul>
           <p style={{marginBottom:4}}><strong style={{color:'#059669'}}>✓ Sent to Claude:</strong></p>
           <ul style={{marginBottom:8,paddingLeft:20}}>
             <li>Your career preferences: desired roles, preferred industries, skills, work type</li>
             <li>Your bio and major (if provided)</li>
             <li>Anonymised job listing data (title, description, tags, location — no applicant data)</li>
+            <li>Your conversation messages when using Chat or Compass (capped at last 20 turns)</li>
           </ul>
           <p style={{marginBottom:4}}><strong style={{color:'#dc2626'}}>✗ Never sent to Claude:</strong></p>
           <ul style={{marginBottom:8,paddingLeft:20}}>
             <li>Your name, email address, or student ID</li>
             <li>Your nationality, gender, or any other demographic identifier</li>
             <li>Your CV file or any uploaded document</li>
-            <li>Your application history or messages</li>
+            <li>Your application history or messages with employers</li>
           </ul>
-          <p style={{marginBottom:16}}>Match scores are <strong>honest</strong> — Claude is explicitly instructed not to inflate scores. A 45% match is a genuine 45%. Every score includes specific reasons so you always know why you ranked where you did.</p>
+          <p style={{marginBottom:16}}>Match scores are <strong>honest</strong> — every agent is explicitly instructed not to inflate scores or manufacture positives. A 45% match is a genuine 45%. Results include specific reasons tied to your real profile fields.</p>
 
           <h3 style={{fontSize:14,fontWeight:700,color:'#0A2E5C',marginBottom:6}}>4. How We Use Your Data</h3>
           <ul style={{marginBottom:16,paddingLeft:20}}>
             <li>To create and maintain your account and profile</li>
-            <li>To match you with relevant job listings using AI analysis</li>
+            <li>To match you with relevant job listings using AI analysis (cached per student)</li>
             <li>To send notifications about new jobs, application updates, and messages</li>
             <li>To display your profile to companies you apply to (with your consent via each application)</li>
-            <li>To generate personalised career advice through our AI assistant</li>
+            <li>To generate personalised career advice, application coaching, and prep plans through our AI agents</li>
           </ul>
 
           <h3 style={{fontSize:14,fontWeight:700,color:'#0A2E5C',marginBottom:6}}>5. Data Security & Storage</h3>
-          <p style={{marginBottom:16}}>Your data is stored in Supabase (PostgreSQL), hosted in a SOC 2 compliant environment. Profile photos and CVs are stored in Supabase Storage. All connections use TLS encryption. Access is restricted by Row-Level Security — you can only read and write your own data.</p>
+          <p style={{marginBottom:16}}>Your data is stored in Supabase (PostgreSQL), hosted in a SOC 2 compliant environment. Profile photos and CVs are stored in Supabase Storage. All connections use TLS encryption. Access is restricted by Row-Level Security — you can only read and write your own data. AI match results are cached in our database and automatically invalidated when your profile or a job listing changes.</p>
 
           <h3 style={{fontSize:14,fontWeight:700,color:'#0A2E5C',marginBottom:6}}>6. Your Rights</h3>
           <ul style={{marginBottom:16,paddingLeft:20}}>
             <li><strong>Access:</strong> View all your data at any time via your Profile page</li>
             <li><strong>Edit:</strong> Update your information at any time in Profile → Edit Profile</li>
-            <li><strong>Opt out of AI:</strong> Simply do not use the AI Matching or AI Insights features</li>
-            <li><strong>Delete:</strong> Delete your account instantly in Profile → Account &amp; Security → Delete account. All your data is wiped from our servers immediately.</li>
+            <li><strong>Opt out of AI:</strong> Simply do not use the AI Matching, AI Insights, Coach, or Compass features</li>
+            <li><strong>Delete:</strong> Delete your account instantly in Profile → Account &amp; Security → Delete account. All your data — including cached AI results — is wiped immediately.</li>
           </ul>
 
           <h3 style={{fontSize:14,fontWeight:700,color:'#0A2E5C',marginBottom:6}}>7. Terms of Service</h3>
           <ul style={{marginBottom:16,paddingLeft:20}}>
-            <li>ALUHub student accounts are for students and alumni of ALU only</li>
+            <li>ALUHub student accounts are for students and alumni of ALU and CMU-Africa only</li>
             <li>Company accounts must represent a real, operating organisation</li>
             <li>Job listings must be genuine opportunities — spam or fraudulent listings will result in immediate removal and account ban</li>
             <li>You may not use ALUHub to collect student data for purposes other than genuine hiring</li>
+            <li>AI-generated content (cover letters, prep plans, company research) is provided as a starting point — you are responsible for verifying and personalising it before use</li>
             <li>We reserve the right to suspend accounts that violate these terms</li>
           </ul>
 
@@ -674,10 +684,11 @@ function PrivacyPolicyModal({ onClose }) {
 //  STEP 2a: STUDENT SIGNUP
 // ══════════════════════════════════════════════════════════════════
 function StepStudentSignup({ onDone, onBack }) {
-  const [form, setForm] = useState({ name: '', email: '', password: '', school: 'ALU', major: '', year: '', agreed: false });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', school: 'ALU', major: '', year: '', agreed: false });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: null })); }
@@ -690,6 +701,7 @@ function StepStudentSignup({ onDone, onBack }) {
       errs.email = `Student signup is for ALU emails only — use a ${STUDENT_DOMAINS.map(d => '@' + d).join(' or ')} address. Choose Company or School if you're not a student.`;
     }
     if (form.password.length < 8) errs.password = 'Password must be at least 8 characters';
+    if (form.password !== form.confirmPassword) errs.confirmPassword = 'Passwords do not match';
     if (!form.major) errs.major = 'Select your program';
     if (!form.year) errs.year = 'Select your year';
     if (!form.agreed) errs.agreed = 'You must accept the Privacy Policy and Terms of Service to continue.';
@@ -775,6 +787,20 @@ function StepStudentSignup({ onDone, onBack }) {
           </div>
 
           <div className="auth-field auth-anim auth-anim-d2">
+            <label className="auth-label">Confirm password</label>
+            <div className="auth-input-wrap">
+              <span className="auth-input-icon material-symbols-rounded">lock</span>
+              <input className={`auth-input ${errors.confirmPassword ? 'err' : ''}`}
+                type={showConfirmPwd ? 'text' : 'password'} placeholder="Re-enter your password"
+                value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} />
+              <button className="auth-pwd-toggle" type="button" onClick={() => setShowConfirmPwd(s => !s)}>
+                <span className="material-symbols-rounded">{showConfirmPwd ? 'visibility_off' : 'visibility'}</span>
+              </button>
+            </div>
+            {errors.confirmPassword && <div className="auth-err"><span className="material-symbols-rounded" style={{fontSize:13}}>error</span>{errors.confirmPassword}</div>}
+          </div>
+
+          <div className="auth-field auth-anim auth-anim-d2">
             <label className="auth-label">Year</label>
             <select className={`auth-input ${errors.year ? 'err' : ''}`} value={form.year} onChange={e => set('year', e.target.value)}>
               <option value="">Year…</option>
@@ -835,10 +861,11 @@ function StepStudentSignup({ onDone, onBack }) {
 //  STEP 2b: COMPANY SIGNUP
 // ══════════════════════════════════════════════════════════════════
 function StepCompanySignup({ onDone, onBack }) {
-  const [form, setForm] = useState({ name: '', company: '', email: '', password: '', industry: '', size: '', agreed: false });
+  const [form, setForm] = useState({ name: '', company: '', email: '', password: '', confirmPassword: '', industry: '', size: '', agreed: false });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: null })); }
@@ -849,6 +876,7 @@ function StepCompanySignup({ onDone, onBack }) {
     if (!form.company.trim()) errs.company = 'Company name required';
     if (!validateEmail(form.email)) errs.email = 'Enter a valid email';
     if (form.password.length < 8) errs.password = 'Min 8 characters';
+    if (form.password !== form.confirmPassword) errs.confirmPassword = 'Passwords do not match';
     if (!form.industry) errs.industry = 'Select industry';
     if (!form.agreed) errs.agreed = 'You must accept the Privacy Policy and Terms of Service to continue.';
     if (Object.keys(errs).length) { setErrors(errs); return; }
@@ -960,6 +988,20 @@ function StepCompanySignup({ onDone, onBack }) {
             {errors.password && <div className="auth-err"><span className="material-symbols-rounded" style={{fontSize:13}}>error</span>{errors.password}</div>}
           </div>
 
+          <div className="auth-field auth-anim auth-anim-d3">
+            <label className="auth-label">Confirm password</label>
+            <div className="auth-input-wrap">
+              <span className="auth-input-icon material-symbols-rounded">lock</span>
+              <input className={`auth-input ${errors.confirmPassword ? 'err' : ''}`}
+                type={showConfirmPwd ? 'text' : 'password'} placeholder="Re-enter your password"
+                value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} />
+              <button className="auth-pwd-toggle" type="button" onClick={() => setShowConfirmPwd(s => !s)}>
+                <span className="material-symbols-rounded">{showConfirmPwd ? 'visibility_off' : 'visibility'}</span>
+              </button>
+            </div>
+            {errors.confirmPassword && <div className="auth-err"><span className="material-symbols-rounded" style={{fontSize:13}}>error</span>{errors.confirmPassword}</div>}
+          </div>
+
           <div className="auth-field">
             <label style={{display:'flex',alignItems:'flex-start',gap:10,cursor:'pointer'}}>
               <input type="checkbox" checked={form.agreed} onChange={e=>set('agreed',e.target.checked)} style={{marginTop:3,width:15,height:15,accentColor:'#0A2E5C',flexShrink:0,cursor:'pointer'}}/>
@@ -991,10 +1033,11 @@ function StepCompanySignup({ onDone, onBack }) {
 //  STEP 2c: SCHOOL SIGNUP
 // ══════════════════════════════════════════════════════════════════
 function StepSchoolSignup({ onDone, onBack }) {
-  const [form, setForm] = useState({ name: '', school: '', email: '', password: '', location: '', student_email_domain: '', agreed: false });
+  const [form, setForm] = useState({ name: '', school: '', email: '', password: '', confirmPassword: '', location: '', student_email_domain: '', agreed: false });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: null })); }
@@ -1005,6 +1048,7 @@ function StepSchoolSignup({ onDone, onBack }) {
     if (!form.school.trim()) errs.school = 'School name required';
     if (!validateEmail(form.email)) errs.email = 'Enter a valid email';
     if (form.password.length < 8) errs.password = 'Min 8 characters';
+    if (form.password !== form.confirmPassword) errs.confirmPassword = 'Passwords do not match';
     // Normalize domain: strip protocol, leading @ and trailing slash
     const cleanDomain = form.student_email_domain.trim().toLowerCase()
       .replace(/^https?:\/\//, '').replace(/^@/, '').replace(/\/$/, '');
@@ -1080,14 +1124,28 @@ function StepSchoolSignup({ onDone, onBack }) {
 
           <div className="auth-field auth-anim auth-anim-d3">
             <label className="auth-label">Password</label>
-            <div className="auth-pw-wrap">
+            <div className="auth-input-wrap">
+              <span className="auth-input-icon material-symbols-rounded">lock</span>
               <input className={`auth-input ${errors.password ? 'err' : ''}`} type={showPwd ? 'text' : 'password'} placeholder="At least 8 characters"
                 value={form.password} onChange={e => set('password', e.target.value)} />
-              <button type="button" className="auth-eye" onClick={() => setShowPwd(s => !s)}>
-                <span className="material-symbols-rounded" style={{fontSize:18}}>{showPwd ? 'visibility_off' : 'visibility'}</span>
+              <button type="button" className="auth-pwd-toggle" onClick={() => setShowPwd(s => !s)}>
+                <span className="material-symbols-rounded">{showPwd ? 'visibility_off' : 'visibility'}</span>
               </button>
             </div>
             {errors.password && <div className="auth-err"><span className="material-symbols-rounded" style={{fontSize:13}}>error</span>{errors.password}</div>}
+          </div>
+
+          <div className="auth-field auth-anim auth-anim-d3">
+            <label className="auth-label">Confirm password</label>
+            <div className="auth-input-wrap">
+              <span className="auth-input-icon material-symbols-rounded">lock</span>
+              <input className={`auth-input ${errors.confirmPassword ? 'err' : ''}`} type={showConfirmPwd ? 'text' : 'password'} placeholder="Re-enter your password"
+                value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} />
+              <button type="button" className="auth-pwd-toggle" onClick={() => setShowConfirmPwd(s => !s)}>
+                <span className="material-symbols-rounded">{showConfirmPwd ? 'visibility_off' : 'visibility'}</span>
+              </button>
+            </div>
+            {errors.confirmPassword && <div className="auth-err"><span className="material-symbols-rounded" style={{fontSize:13}}>error</span>{errors.confirmPassword}</div>}
           </div>
 
           <div className="auth-field auth-anim auth-anim-d3">
