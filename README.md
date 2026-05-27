@@ -1,136 +1,194 @@
-# ALU Hub
+# ALUHub — AI Career Platform for African Students
 
-Student platform for ALU & CMU-Africa.
+> **Claude Builders Club Hackathon 2026 · Track: Economic Empowerment & Education**
+
+**Live app:** https://aluhub.pages.dev  
+**Backend API:** https://aluhub-server.onrender.com
+
+---
+
+## The Problem
+
+Over 500 students at African Leadership University (ALU) and CMU-Africa graduate each year into a job market that wasn't built for them:
+
+- Generic job boards show irrelevant listings from the wrong continent
+- Career services are overstretched — one counsellor can't give 500 students personalised advice
+- Students don't know which skills to build, which companies to target, or how to write a competitive cover letter
+- Internship listings are scattered across WhatsApp groups, LinkedIn, and email forwards
+- There is no single verified, structured pipeline from student → opportunity → hire
+
+The result: talented African graduates lose months — sometimes years — to an information gap that their peers at well-funded universities never face.
+
+---
+
+## The Solution: ALUHub
+
+ALUHub is a full-stack career platform built exclusively for ALU and CMU-Africa students. It connects verified students with internship and full-time opportunities posted directly by companies and the university's career office — and uses Claude AI throughout to give every student the kind of personalised career coaching that was previously only available to a lucky few.
+
+**Claude is not a chatbot wrapper here. It is the career counsellor.**
+
+---
+
+## How Claude Is Used
+
+ALUHub uses the Claude API across five distinct, purposeful workflows — each using the right model for the job:
+
+### 1. AI Job Matching (`claude-sonnet-4-6`)
+**Endpoint:** `POST /api/ai/match`
+
+Claude reads the student's full profile — their CV, preferred roles, skills, major, graduation year, work-type preference — and scores every active job listing against it (in batches of 20). Each listing gets a 0–100 match score and 2–3 specific reasons. Results are cached in `ai_match_cache` so the dashboard always loads instantly.
+
+```
+Student uploads CV → Claude scores all 40+ listings → ranked feed with:
+"87% match — strong Python fit, matches remote preference, location is Nairobi as requested"
+```
+
+### 2. AI Career Chat (`claude-opus-4-7`)
+**Endpoint:** `POST /api/ai/chat`
+
+A context-aware career assistant that knows the student's profile, their top matched jobs, and their skill gaps. Students ask questions like "Review my CV", "What skills do I need for a data role at Andela?" or "Draw my 6-month job search plan" — and get substantive, personalised answers, not generic advice.
+
+Supports rich markdown responses including **career roadmap diagrams** (rendered via Mermaid.js), skills bar charts, and structured job search plans.
+
+### 3. Compass — AI Career Guide (`claude-opus-4-7`)
+**Endpoint:** `POST /api/ai/compass`
+
+A multi-turn agentic career guide with **persistent sessions** — a student can close the app and resume the same conversation days later. Compass runs two modes:
+- **Chat mode** — open-ended career exploration and planning
+- **Interview prep mode** — simulated behavioural interviews with real-time feedback
+
+### 4. AI Application Coach (`claude-opus-4-7`)
+**Endpoint:** `POST /api/ai/coach`
+
+Three-stage agentic pipeline for every job application:
+1. **Draft** — Claude writes a personalised cover letter from the student's profile + job description
+2. **Critique** — Claude reviews its own draft and flags weaknesses
+3. **Refine** — Claude rewrites with the critique applied
+
+Students see all three stages and can intervene at any point.
+
+### 5. Company Research (`claude-sonnet-4-6`)
+**Endpoint:** `POST /api/ai/company`
+
+Before applying, students ask Claude to research a company — its mission, culture, typical roles, skills required, and likely interview questions — structured for an African market context.
+
+### Technical Highlights
+
+| Feature | Detail |
+|---|---|
+| **Prompt caching** | All system prompts use `cache_control: { type: 'ephemeral' }` — lower latency, lower cost on repeated calls |
+| **Model routing** | Opus 4.7 for quality-critical outputs (chat, coaching, compass); Sonnet 4.6 for high-volume structured tasks (matching, research) |
+| **Prompt injection protection** | All user text is sanitised — control chars stripped, XML envelope tags removed, fields length-clamped before reaching any prompt |
+| **Truncation recovery** | Match endpoint salvages partial JSON arrays when `stop_reason === 'max_tokens'` |
+| **Data minimisation** | Name, email, nationality, and the CV file itself are **never sent to Claude** — only career preferences and anonymised listing data |
+| **Batch processing** | Job matching runs in parallel groups of 20 to stay within context limits |
+
+---
+
+## Impact
+
+**Who benefits:**
+- 500+ ALU/CMU-Africa students per cohort, with capacity to expand to partner universities across Africa
+- Career services staff — AI handles the first layer of coaching at scale
+- African companies posting roles — reach a pre-screened, CV-verified talent pool
+
+**What changes for students:**
+- A first-year student with no network gets the same quality career advice as one with an expensive private coach
+- Students stop applying blindly — they see exactly why a job matches and what skill gap to close first
+- Opportunities surface that students would never have found on their own
+
+**Alignment with "Machines of Loving Grace":**
+Dario Amodei's essay describes AI compressing decades of human progress — particularly in education and economic opportunity. ALUHub is a direct instantiation of that: a student with a smartphone and an ALU email address now has access to career intelligence that previously required either a prestigious alumni network or thousands of dollars in coaching fees. We're giving African students the same starting line.
+
+---
+
+## Ethical Alignment
+
+- **No demographic data sent to Claude** — race, nationality, gender, and student ID are never in any prompt
+- **Honest match scores** — Claude is explicitly instructed not to inflate scores; a 45% match is a genuine 45%, with clear reasoning
+- **Year-based access control** — listings restricted to specific cohort years are enforced client- and server-side; no student sees opportunities they aren't eligible for
+- **Transparent AI disclosure** — every AI-generated output is clearly labelled so students always know when they're reading Claude's output vs. real company content
+- **CV stays on platform** — uploaded CV files are never forwarded to the API; only structured preference data (desired roles, skills, work type) reaches Claude
+
+---
 
 ## Architecture
 
-Decoupled frontend / backend. The frontend has no knowledge of backend
-internals — it talks to the backend only over HTTP through a CORS-guarded
-API surface.
-
 ```
-ALUHUB/
-├── client/   Web frontend  — Vite + React + TypeScript
-├── server/   Backend API   — Node.js + Express + TypeScript
-└── mobile/   Mobile app    — Flutter (Dart)
+┌───────────────────────────────────────────────────────┐
+│  Frontend — Cloudflare Pages                          │
+│  React · https://aluhub.pages.dev                    │
+│                                                       │
+│  AI flows: match → chat → compass → coach → company  │
+└──────────────────────┬────────────────────────────────┘
+                       │ HTTPS
+┌──────────────────────▼────────────────────────────────┐
+│  Backend — Render  (Node.js + Express + TypeScript)   │
+│  https://aluhub-server.onrender.com                   │
+│                                                       │
+│  /api/ai/chat      claude-opus-4-7                    │
+│  /api/ai/match     claude-sonnet-4-6  (cached)        │
+│  /api/ai/coach     claude-opus-4-7   (3-stage agent)  │
+│  /api/ai/compass   claude-opus-4-7   (multi-turn)     │
+│  /api/ai/company   claude-sonnet-4-6                  │
+└──────────────────────┬────────────────────────────────┘
+                       │
+┌──────────────────────▼────────────────────────────────┐
+│  Database — Supabase (PostgreSQL)                     │
+│  Custom auth · job_listings · ai_match_cache          │
+│  profiles · applications · compass_sessions           │
+└───────────────────────────────────────────────────────┘
 ```
 
-- **Database:** PostgreSQL via Supabase. Keys live in `server/.env`.
-- **Auth:** access + refresh token rotation (see `server/src/lib/tokens.ts`).
-- **CORS:** backend allows only the origins listed in `CLIENT_ORIGINS`.
+**Stack:** React, Express, TypeScript, Supabase, Cloudflare Pages, Render, Claude API (Anthropic)
 
-## Getting started
+---
 
-### 1. Backend (`server/`)
+## Demo Accounts
 
+All passwords: `Demo2026!`
+
+| Role | Email |
+|---|---|
+| Student | Sign up with any `@alustudent.com` email |
+| Company | `andela@aluhub.com` |
+| Company | `flutterwave@aluhub.com` |
+| School / Career Services | `careers@alu.edu` |
+
+---
+
+## Running Locally
+
+### Backend
 ```bash
 cd server
-cp .env.example .env        # then fill in the secret values
+cp .env.example .env        # add ANTHROPIC_API_KEY + Supabase keys
 npm install
 npm run dev                 # http://localhost:4000
 ```
 
-Run the SQL in `server/db/` against your Supabase project:
-`schema.sql`, `auth_tokens.sql`, `follow_migration.sql`.
-
-### 2. Web client (`client/`)
-
+### Frontend
 ```bash
 cd client
-cp .env.example .env
 npm install
-npm run dev                 # http://localhost:5173
+node scripts/build-legacy.mjs   # compile the UI bundle
+npm run dev                     # http://localhost:5173
 ```
 
-The original ALU Hub UI is preserved in `client/legacy-src/` and is
-compiled ahead-of-time by `scripts/build-legacy.mjs` (no in-browser Babel
-— this is the main performance win over the old setup).
+### Database
+Run SQL files in order against your Supabase project:
+1. `server/db/schema.sql`
+2. `server/db/custom_auth.sql`
+3. `server/db/migration_school_and_apply_modes.sql`
+4. `server/db/seed_companies_and_jobs.sql`
+5. `server/db/seed_school_and_apply_modes.sql`
 
-### 3. Mobile app (`mobile/`)
+---
 
-```bash
-cd mobile
-flutter pub get
-flutter run --dart-define=API_URL=http://10.0.2.2:4000
-```
+## Internal Architecture Notes
 
-## Progressive Web App (PWA)
-
-The web app is fully PWA-enabled with push notifications, offline support, and install prompts. Users can install it from the browser on any device (no Play Store required).
-
-**Features:**
-- ✅ Install as app (iOS 16.4+, Android, desktop)
-- ✅ Push notifications (via Web Push API + FCM backend)
-- ✅ Offline support (app shell caching, network fallback for API calls)
-- ✅ Home screen icon
-- ✅ Standalone mode (no browser chrome)
-
-**How it works:**
-1. Service worker (`public/service-worker.js`) handles offline & caching
-2. On login, the app requests notification permission and registers with Web Push
-3. The server sends pushes via the same FCM backend to both Android and web clients
-4. Users see an iOS-style install banner on compatible browsers
-
-**Server setup (required for push):**
-
-The server needs VAPID keys (Web Push standard). Default test keys are included, but for production:
-
-```bash
-# Generate new keys (one-time)
-node -e "const wp=require('web-push'); console.log(JSON.stringify(wp.generateVAPIDKeys()))"
-```
-
-Set in Render environment:
-- `VAPID_PUBLIC_KEY` — shared with clients
-- `VAPID_PRIVATE_KEY` — kept secret on server
-- `VAPID_SUBJECT` — email or URL for Push Service contact (default: noreply@aluhub.com)
-
-## Android APK distribution
-
-The web app's left sidebar has a **Get the Android app** link that hits
-`GET /api/download/android` on the server, which 302-redirects to the
-latest release APK on GitHub Releases. The CI workflow
-`.github/workflows/build-android-apk.yml` publishes the raw `.apk` as an
-asset on the `android-latest` release tag on every push to `main`, so the
-download URL is stable across builds and the file is **not** zipped (unlike
-Actions artifacts, which GitHub auto-wraps in a zip).
-
-### Reducing the Play Protect "scan this app" warning
-
-A debug-signed APK trips Play Protect hard. To sign release builds with a
-real upload keystore (and dramatically reduce the warning), generate a
-keystore once and add four secrets to the GitHub repo.
-
-```bash
-# Generate the keystore (one-time, locally — keep the file safe!)
-keytool -genkeypair -v \
-  -keystore aluhub-release.keystore \
-  -alias aluhub \
-  -keyalg RSA -keysize 2048 -validity 10000
-
-# Base64-encode for the GitHub secret
-base64 -w 0 aluhub-release.keystore > keystore.b64
-```
-
-In GitHub → Settings → Secrets and variables → Actions, add:
-
-| Secret | Value |
-| --- | --- |
-| `ANDROID_KEYSTORE_BASE64` | contents of `keystore.b64` |
-| `ANDROID_KEYSTORE_PASSWORD` | store password from `keytool` |
-| `ANDROID_KEY_ALIAS` | `aluhub` (or whatever `-alias` you used) |
-| `ANDROID_KEY_PASSWORD` | key password from `keytool` |
-
-Without these the build still works — it falls back to debug signing and
-prints a warning. With them, the release APK is properly signed.
-
-> Even with proper signing, Play Protect may still warn the first few
-> times an APK from a new developer key is sideloaded. The only way to
-> remove the warning entirely is to distribute through the Google Play
-> Store. The "Install anyway" button is intentionally subtle by Android
-> design and cannot be hidden from inside the APK.
-
-### Server env (optional)
-
-- `ANDROID_APK_URL` — override the redirect target for `/api/download/android`.
-  Defaults to the `android-latest` GitHub Release asset.
+- **`client/legacy-src/ALUHub.js`** — main production UI (compiled by esbuild into `client/public/app/`)
+- **`server/src/routes/ai.ts`** — all Claude API calls with prompt caching, sanitisation, and model routing
+- **`server/db/`** — SQL migrations, all idempotent and safe to re-run
+- **Custom auth** — `public.app_users` table (not Supabase Auth), bcrypt cost 12, JWT access + httpOnly refresh tokens
+- **PWA** — installable on Android/iOS, push notifications via Web Push API, service worker for offline support
