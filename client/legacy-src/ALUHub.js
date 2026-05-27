@@ -2330,7 +2330,9 @@ function Internships({setPage,onViewCompany}){
     dbGetInternships().then(dbJobs=>{
       setJobs(dbJobs);setScoredJobs(dbJobs);setLoading(false);
 
-      // Restore cached AI match results so they survive page refresh
+      // Restore cached AI match results so they survive page refresh.
+      // If the student has a CV but no cached matches yet, auto-run matching
+      // (no manual button click required) so scores appear without ceremony.
       const c=getSB();
       if(uid&&c){
         c.from('ai_match_cache')
@@ -2339,19 +2341,31 @@ function Internships({setPage,onViewCompany}){
           .order('score',{ascending:false})
           .limit(200)
           .then(({data})=>{
-            if(!data||!data.length) return;
-            const anyStale=data.some(r=>r.stale);
-            console.log('[ALUHub Match] Restored',data.length,'cached matches from DB'+(anyStale?' (stale)':''));
-            if(anyStale) setCacheIsStale(true);
-            const scoreMap=Object.fromEntries(data.map(r=>[r.job_id,r]));
-            const scoredAll=dbJobs.map(j=>{
-              const m=scoreMap[j.id];
-              if(m) return{...j,match:m.score,matchTip:m.tip||null,matchReasons:m.match_reasons||[],matchedSkills:m.matched_skills||[]};
-              return j;
-            }).sort((a,b)=>(b.match||0)-(a.match||0));
-            setScoredJobs(scoredAll);
-            setMatchResults(scoredAll.filter(j=>j.match>0));
-            setMatchStatus('done');
+            if(data&&data.length){
+              const anyStale=data.some(r=>r.stale);
+              console.log('[ALUHub Match] Restored',data.length,'cached matches from DB'+(anyStale?' (stale)':''));
+              if(anyStale) setCacheIsStale(true);
+              const scoreMap=Object.fromEntries(data.map(r=>[r.job_id,r]));
+              const scoredAll=dbJobs.map(j=>{
+                const m=scoreMap[j.id];
+                if(m) return{...j,match:m.score,matchTip:m.tip||null,matchReasons:m.match_reasons||[],matchedSkills:m.matched_skills||[]};
+                return j;
+              }).sort((a,b)=>(b.match||0)-(a.match||0));
+              setScoredJobs(scoredAll);
+              setMatchResults(scoredAll.filter(j=>j.match>0));
+              setMatchStatus('done');
+              return;
+            }
+            // No cached matches — auto-trigger matching if we have profile data
+            // to score against. The flow shows the same progress UI the manual
+            // button used to trigger, so the student sees what's happening.
+            c.from('profiles').select('cv_filename,desired_roles,skills,major').eq('id',uid).maybeSingle().then(({data:p})=>{
+              const hasSignal=!!(p&&(p.cv_filename||(p.desired_roles||[]).length||(p.skills||[]).length||p.major));
+              if(hasSignal&&dbJobs.length){
+                console.log('[ALUHub Match] Auto-matching on first visit (no cache yet)');
+                runMatchFlow('auto');
+              }
+            });
           });
       }
 
@@ -13421,10 +13435,73 @@ function CompassPage({user}){
     if(endRef.current) endRef.current.scrollIntoView({behavior:'smooth',block:'end'});
   },[messages,thinking]);
 
+  // ── SESSION PERSISTENCE ───────────────────────────────────────────
+  // Save the full Compass state to compass_sessions on every change so
+  // the student can refresh, log out, come back tomorrow, and pick up
+  // mid-interview. One row per student; upsert keyed on student_id.
+  const uid=user?.user?.id;
+  const [sessionLoaded,setSessionLoaded]=useState(false);
+
+  // Load saved session on mount (once we know the user id)
+  useEffect(()=>{
+    if(!uid){ setSessionLoaded(true); return; }
+    const c=getSB(); if(!c){ setSessionLoaded(true); return; }
+    let cancelled=false;
+    c.from('compass_sessions')
+      .select('messages,recommendations,prep_plans,stage,ready')
+      .eq('student_id',uid)
+      .maybeSingle()
+      .then(({data,error:dbErr})=>{
+        if(cancelled) return;
+        if(dbErr){ console.warn('[Compass] session load:',dbErr.message); }
+        if(data){
+          if(Array.isArray(data.messages)&&data.messages.length) setMessages(data.messages);
+          if(data.recommendations) setRecs(data.recommendations);
+          if(data.stage) setStage(data.stage);
+          if(data.ready) setReady(true);
+          console.log('[Compass] restored session — stage='+(data.stage||'?')+', messages='+(data.messages?.length||0));
+        }
+        setSessionLoaded(true);
+      });
+    return ()=>{ cancelled=true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[uid]);
+
+  // Save session whenever messages/stage/recs change (after initial load)
+  useEffect(()=>{
+    if(!sessionLoaded||!uid) return;
+    if(stage==='welcome'&&messages.length===0) return; // nothing to save yet
+    const c=getSB(); if(!c) return;
+    const payload={
+      student_id:uid,
+      messages,
+      recommendations:recs,
+      stage,
+      ready,
+    };
+    c.from('compass_sessions').upsert(payload,{onConflict:'student_id'})
+      .then(({error:dbErr})=>{
+        if(dbErr) console.warn('[Compass] session save:',dbErr.message);
+      });
+  },[messages,stage,recs,ready,sessionLoaded,uid]);
+
   function startInterview(){
     const greeting=`Hi ${firstName}, I'm Compass. I'll ask a few short questions to understand what you're aiming for, then surface 3 live opportunities on ALUHub that fit. Ready? Tell me — what problem in the world feels most worth your time right now?`;
     setMessages([{role:'assistant',content:greeting}]);
     setStage('interview');
+  }
+
+  function resetSession(){
+    if(!confirm('Start a new Compass interview? Your current conversation will be replaced.')) return;
+    setMessages([]);
+    setRecs(null);
+    setPrepFor(null);
+    setReady(false);
+    setStage('welcome');
+    const c=getSB();
+    if(c&&uid){
+      c.from('compass_sessions').delete().eq('student_id',uid).then(()=>{});
+    }
   }
 
   async function sendMessage(){
@@ -13549,6 +13626,14 @@ function CompassPage({user}){
       const data=await res.json();
       setPrepFor({job:jobRow,plan:data});
       setStage('prepped');
+      // Persist this prep plan keyed by job id so the student can scroll
+      // back to it later without re-running the agent
+      const c=getSB();
+      if(c&&uid){
+        c.from('compass_sessions')
+          .upsert({student_id:uid,prep_plans:{[jobRow.id]:data}},{onConflict:'student_id'})
+          .then(()=>{});
+      }
     }catch(e){
       console.warn('[Compass prep] failed:',e);
       setErrMsg(e.message||'Could not build prep plan.');
@@ -13591,6 +13676,14 @@ function CompassPage({user}){
       </div>
 
       <div className="aco-content">
+        {stage!=='welcome' && messages.length>0 && (
+          <div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}>
+            <button onClick={resetSession} style={{display:'inline-flex',alignItems:'center',gap:5,background:'transparent',border:'1px solid var(--border)',color:'var(--text3)',padding:'5px 10px',borderRadius:18,fontSize:11.5,fontWeight:600,cursor:'pointer'}}>
+              <span className="material-symbols-rounded" style={{fontSize:13}}>restart_alt</span>Start fresh
+            </button>
+          </div>
+        )}
+
         {stage==='welcome' && (
           <div className="aco-card">
             <div style={{fontSize:14,color:'var(--text2)',lineHeight:1.7,marginBottom:14}}>
@@ -13600,6 +13693,10 @@ function CompassPage({user}){
                 <li style={{marginBottom:6}}><strong>Recommend</strong> — Compass picks 3 live ALUHub roles that fit, with reasoning.</li>
                 <li><strong>Prep plan</strong> — Compass builds a personal plan for the role you pick.</li>
               </ol>
+              <div style={{marginTop:12,padding:'8px 10px',background:'rgba(37,99,235,.06)',borderRadius:8,fontSize:12,color:'var(--text3)',lineHeight:1.55}}>
+                <span className="material-symbols-rounded" style={{fontSize:13,verticalAlign:'middle',marginRight:4,color:'var(--accent)'}}>save</span>
+                Your conversation auto-saves — refresh or come back later and pick up right where you left off.
+              </div>
             </div>
             <button className="aco-btn" onClick={startInterview}>
               <span className="material-symbols-rounded" style={{fontSize:16}}>auto_awesome</span>Start the interview
