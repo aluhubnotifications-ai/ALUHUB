@@ -14354,15 +14354,27 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
     if(isCompany) return;
     const c=getSB(); if(!c) return;
     const set=k=>n=>setLiveCounts(p=>({...p,[k]:n||0}));
+    // Count active jobs applying the same allowed_years filter as dbGetInternships
+    const countVisibleJobs=()=>c.from('job_listings').select('id,allowed_years').eq('status','active').then(r=>{
+      const u=window.__aluHubUser;
+      const userYear=u?.profile?.year||null;
+      const rows=r.data||[];
+      const n=rows.filter(j=>{
+        const ay=j.allowed_years;
+        if(!Array.isArray(ay)||ay.length===0) return true;
+        return Boolean(userYear)&&ay.includes(userYear);
+      }).length;
+      set('jobs')(n);
+    });
     // Initial fetch all counts in parallel
-    c.from('job_listings').select('id',{count:'exact',head:true}).eq('status','active').then(r=>set('jobs')(r.count));
+    countVisibleJobs();
     c.from('profiles').select('id',{count:'exact',head:true}).eq('user_type','company').then(r=>set('companies')(r.count));
     c.from('housing_requests').select('id',{count:'exact',head:true}).eq('status','active').then(r=>set('housing')(r.count));
     c.from('student_skills').select('id',{count:'exact',head:true}).then(r=>set('skills')(r.count));
     c.from('resources').select('id',{count:'exact',head:true}).then(r=>set('resources')(r.count));
     // Realtime — refresh matching count when any table changes
     const ch=c.channel('live-counts')
-      .on('postgres_changes',{event:'*',schema:'public',table:'job_listings'},()=>c.from('job_listings').select('id',{count:'exact',head:true}).eq('status','active').then(r=>set('jobs')(r.count)))
+      .on('postgres_changes',{event:'*',schema:'public',table:'job_listings'},()=>countVisibleJobs())
       .on('postgres_changes',{event:'*',schema:'public',table:'profiles'},()=>c.from('profiles').select('id',{count:'exact',head:true}).eq('user_type','company').then(r=>set('companies')(r.count)))
       .on('postgres_changes',{event:'*',schema:'public',table:'housing_requests'},()=>c.from('housing_requests').select('id',{count:'exact',head:true}).eq('status','active').then(r=>set('housing')(r.count)))
       .on('postgres_changes',{event:'*',schema:'public',table:'student_skills'},()=>c.from('student_skills').select('id',{count:'exact',head:true}).then(r=>set('skills')(r.count)))
