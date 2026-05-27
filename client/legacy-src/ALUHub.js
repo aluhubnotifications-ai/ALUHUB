@@ -1919,30 +1919,40 @@ function OnboardingWizard({user,onComplete}){
 }
 
 // ── AI TOP PICKS ─────────────────────────────────────
-// Calls /api/ai/rank on first dashboard load, caches the result in
-// localStorage keyed by (uid, profile hash, jobs hash). Re-runs only
-// when one of those changes. Surfaces Claude's top 3 ranked jobs with
-// a one-sentence "why" — the dashboard moment that puts Claude front
-// and centre instead of buried in an Insights tab.
+// Reads ranked matches directly from the ai_match_cache DB table — the
+// SAME source as the Internships matching page, so both surfaces show
+// identical scores. Falls back to /api/ai/rank only when the student has
+// never run matching (empty cache). Subscribes to cache changes so the
+// dashboard updates the moment a new match comes in.
 function AITopPicks({jobs,user,setPage,setApplyJob}){
   const profile=user?.profile||{};
   const uid=user?.user?.id;
   const [ranks,setRanks]=useState(null); // null=loading, []=none, [...]=ranked
   const [error,setError]=useState('');
   const [refreshing,setRefreshing]=useState(false);
-  const [hasFired,setHasFired]=useState(false);
+  const [source,setSource]=useState('cache'); // 'cache' | 'rank' — for the UI label
 
-  // Stable cache key — change profile or job list, key changes, ranking re-fires.
-  const profileKey=JSON.stringify([
-    profile.major||'',profile.year||'',
-    (profile.desired_roles||[]).slice().sort(),
-    (profile.preferred_industries||[]).slice().sort(),
-    (profile.skills||[]).slice().sort(),
-    profile.work_type||'',profile.location_pref||'',
-  ]);
-  const jobsKey=jobs.slice(0,40).map(j=>j.id).join(',');
-  const cacheKey=uid?`aluhub_airank_${uid}`:null;
+  // Read the top matches from ai_match_cache. Same query the matching page uses.
+  async function readFromCache(){
+    const c=getSB();
+    if(!c||!uid) return null;
+    const {data,error:dbErr}=await c.from('ai_match_cache')
+      .select('job_id,score,tip,match_reasons,matched_skills,stale')
+      .eq('student_id',uid)
+      .order('score',{ascending:false})
+      .limit(20);
+    if(dbErr){ console.warn('[AITopPicks] cache read failed:',dbErr.message); return null; }
+    if(!data||!data.length) return null;
+    // Translate cache rows into the {job_id, score, why} shape the UI expects
+    return data.map(r=>({
+      job_id: r.job_id,
+      score:  r.score,
+      why:    r.tip || (Array.isArray(r.match_reasons)&&r.match_reasons[0]?.label) || (Array.isArray(r.match_reasons)&&r.match_reasons[0]) || null,
+    }));
+  }
 
+  // Fallback: ask /api/ai/rank only when nothing is cached yet.
+  // The backend itself reads ai_match_cache first, so this fills the cache too.
   async function runRank(){
     if(!uid||!jobs.length) return;
     setRefreshing(true);
@@ -1960,7 +1970,8 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
         })),
       };
       const res=await fetch(getApiUrl()+'/api/ai/rank',{
-        method:'POST',headers:{'Content-Type':'application/json'},
+        method:'POST',
+        headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
         body:JSON.stringify(payload),
       });
       if(!res.ok){
@@ -1968,13 +1979,10 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
         throw new Error(err.error||'Server returned '+res.status);
       }
       const data=await res.json();
-      const arr=data.rankings||[];
-      setRanks(arr);
-      if(cacheKey){
-        try{localStorage.setItem(cacheKey,JSON.stringify({profileKey,jobsKey,ranks:arr,ts:Date.now()}));}catch(_){}
-      }
+      setRanks(data.rankings||[]);
+      setSource('rank');
     }catch(e){
-      console.warn('[AITopPicks] failed:',e);
+      console.warn('[AITopPicks] rank failed:',e);
       setError(e.message||'Could not rank');
       setRanks([]);
     }finally{
@@ -1982,20 +1990,46 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
     }
   }
 
-  useEffect(()=>{
-    if(hasFired||!jobs.length||!uid) return;
-    setHasFired(true);
-    // Try cache first
-    if(cacheKey){
-      try{
-        const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
-        if(cached&&cached.profileKey===profileKey&&cached.jobsKey===jobsKey&&Array.isArray(cached.ranks)){
-          setRanks(cached.ranks);
-          return;
-        }
-      }catch(_){}
+  // Refresh = re-read DB cache first; only call /rank if still empty
+  async function refresh(){
+    setRefreshing(true);
+    const cached=await readFromCache();
+    if(cached&&cached.length){
+      setRanks(cached);
+      setSource('cache');
+      setRefreshing(false);
+    } else {
+      await runRank();
     }
-    runRank();
+  }
+
+  useEffect(()=>{
+    if(!jobs.length||!uid) return;
+    let cancelled=false;
+    (async()=>{
+      const cached=await readFromCache();
+      if(cancelled) return;
+      if(cached&&cached.length){
+        setRanks(cached);
+        setSource('cache');
+      } else {
+        // No cache yet — generate one via /rank (also fills DB cache)
+        await runRank();
+      }
+    })();
+
+    // Subscribe to cache changes so dashboard auto-updates when matching runs
+    const c=getSB();
+    let sub=null;
+    if(c){
+      sub=c.channel('aitoppicks-'+uid)
+        .on('postgres_changes',{event:'*',schema:'public',table:'ai_match_cache',filter:`student_id=eq.${uid}`},async()=>{
+          const fresh=await readFromCache();
+          if(!cancelled&&fresh) { setRanks(fresh); setSource('cache'); }
+        })
+        .subscribe();
+    }
+    return()=>{ cancelled=true; if(sub&&c) c.removeChannel(sub); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[jobs.length,uid]);
 
@@ -2022,7 +2056,7 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
           </div>
         </div>
         <button
-          onClick={runRank}
+          onClick={refresh}
           disabled={refreshing}
           style={{display:'inline-flex',alignItems:'center',gap:5,padding:'5px 12px',borderRadius:20,border:'1.5px solid var(--accent)',background:'transparent',color:'var(--accent)',fontSize:11.5,fontWeight:700,cursor:refreshing?'default':'pointer',opacity:refreshing?.6:1}}
         >
@@ -2046,7 +2080,7 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
 
       {error && (
         <div style={{padding:'10px 12px',background:'rgba(220,38,38,.06)',border:'1px solid rgba(220,38,38,.2)',borderRadius:10,fontSize:12.5,color:'#DC2626'}}>
-          {error} <button onClick={runRank} style={{background:'none',border:'none',color:'#DC2626',fontWeight:700,cursor:'pointer',textDecoration:'underline',padding:0,marginLeft:6}}>Try again</button>
+          {error} <button onClick={refresh} style={{background:'none',border:'none',color:'#DC2626',fontWeight:700,cursor:'pointer',textDecoration:'underline',padding:0,marginLeft:6}}>Try again</button>
         </div>
       )}
 
@@ -2449,7 +2483,7 @@ function Internships({setPage,onViewCompany}){
       console.log('[ALUHub Match] Batch '+(idx+1)+'/'+batches.length+': firing',batch.length,'jobs');
       return fetch(getApiUrl()+'/api/ai/match',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
         body:JSON.stringify({profile,jobs:batch}),
       });
     });
@@ -11955,7 +11989,7 @@ async function runBackgroundMatch(uid, profile){
 
     const res=await fetch(getApiUrl()+'/api/ai/match',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
       body:JSON.stringify({profile,jobs:jobs.map(j=>({id:j.id,title:j.title,description:j.description,type:j.type,location:j.location,tags:j.tags||[]}))}),
     });
     if(!res.ok){
@@ -13414,7 +13448,7 @@ function CompassPage({user}){
     try{
       const res=await fetch(getApiUrl()+'/api/ai/compass',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
         body:JSON.stringify({
           mode:'interview',
           messages:next,
@@ -13467,7 +13501,7 @@ function CompassPage({user}){
       }));
       const res=await fetch(getApiUrl()+'/api/ai/compass',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
         body:JSON.stringify({
           mode:'recommend',
           messages,
@@ -13500,7 +13534,7 @@ function CompassPage({user}){
     try{
       const res=await fetch(getApiUrl()+'/api/ai/compass',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
         body:JSON.stringify({
           mode:'prep',
           profile:{

@@ -294,6 +294,14 @@ async function changePassword(currentPassword, newPassword) {
 }
 window.changePassword = changePassword;
 
+// Expose auth header helper so ALUHub.js (loaded separately) can attach
+// the bearer token to AI API calls. Protected endpoints like /api/ai/match,
+// /api/ai/rank, /api/ai/compass require it for per-student cache lookups.
+window.__authHeaders = function authHeaders() {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 async function upsertProfile(userId, profile) {
   const client = sb();
   if (!client) return;
