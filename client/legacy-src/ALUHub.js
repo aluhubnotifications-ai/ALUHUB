@@ -296,9 +296,13 @@ function JobCard({job, onClick, onApply}){
           </div>
           {job.matchReasons?.length>0&&(
             <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-              {job.matchReasons.slice(0,2).map((r,i)=>(
-                <span key={i} style={{fontSize:10.5,color:'var(--text3)',background:'var(--bg2)',padding:'2px 8px',borderRadius:20,border:'1px solid var(--border)',lineHeight:1.5}}>{r}</span>
-              ))}
+              {job.matchReasons.slice(0,2).map((r,i)=>{
+                // Legacy rows have [{label,detail}] objects; newer rows
+                // are plain strings. Render whichever we get safely.
+                const text=typeof r==='string'?r:(r?.label||r?.detail||'');
+                if(!text) return null;
+                return <span key={i} style={{fontSize:10.5,color:'var(--text3)',background:'var(--bg2)',padding:'2px 8px',borderRadius:20,border:'1px solid var(--border)',lineHeight:1.5}}>{text}</span>;
+              })}
             </div>
           )}
         </div>
@@ -1940,7 +1944,13 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
     return (data||[]).map(r=>({
       job_id: r.job_id,
       score:  r.score,
-      why:    r.tip || (Array.isArray(r.match_reasons)&&r.match_reasons[0]?.label) || (Array.isArray(r.match_reasons)&&r.match_reasons[0]) || null,
+      why:    (function(){
+        if(r.tip) return r.tip;
+        if(!Array.isArray(r.match_reasons)||!r.match_reasons.length) return null;
+        const first=r.match_reasons[0];
+        if(typeof first==='string') return first;
+        return first?.label||first?.detail||null;
+      })(),
     }));
   }
 
@@ -2359,11 +2369,15 @@ function Internships({setPage,onViewCompany}){
             // No cached matches — auto-trigger matching if we have profile data
             // to score against. The flow shows the same progress UI the manual
             // button used to trigger, so the student sees what's happening.
+            // Defer with setTimeout so React has committed setJobs(dbJobs)
+            // before runMatchFlow reads `jobs` from its closure.
             c.from('profiles').select('cv_filename,desired_roles,skills,major').eq('id',uid).maybeSingle().then(({data:p})=>{
               const hasSignal=!!(p&&(p.cv_filename||(p.desired_roles||[]).length||(p.skills||[]).length||p.major));
               if(hasSignal&&dbJobs.length){
-                console.log('[ALUHub Match] Auto-matching on first visit (no cache yet)');
-                runMatchFlow('auto');
+                setTimeout(()=>{
+                  console.log('[ALUHub Match] Auto-matching on first visit (no cache yet)');
+                  runMatchFlow('auto');
+                },80);
               }
             });
           });
@@ -2428,6 +2442,14 @@ function Internships({setPage,onViewCompany}){
   }
 
   async function runMatchFlow(seed=''){
+    if(matchStatus==='thinking'){
+      console.log('[ALUHub Match] Already running — skipping duplicate call (seed:',seed,')');
+      return;
+    }
+    if(!jobs.length){
+      console.log('[ALUHub Match] No jobs loaded yet — skipping (seed:',seed,')');
+      return;
+    }
     console.log('[ALUHub Match] Starting match —',jobs.length,'jobs, seed:',seed);
     setMatchStatus('thinking');
     setMatchError('');
