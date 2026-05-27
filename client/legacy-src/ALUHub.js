@@ -1,8 +1,29 @@
 // React hooks (useState, useEffect, useRef, useCallback) are declared
 // in ALUHub_Auth.js, which is loaded after this file.
 
-// Claude AI official logo — served locally to avoid CORS/blocking issues
-const CLAUDE_LOGO = '/claude-logo.png';
+// AI assistant icon — inline SVG, no external branding
+let _aiLogoId = 0;
+function AiLogo({size=24,rx,style,className}){
+  const idRef = React.useRef(null);
+  if(idRef.current===null) idRef.current='aig'+(++_aiLogoId);
+  const id = idRef.current;
+  const r = rx!=null ? rx : 11;
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#0A2E5C"/>
+          <stop offset="100%" stopColor="#2563EB"/>
+        </linearGradient>
+      </defs>
+      <rect width="40" height="40" rx={r} fill={`url(#${id})`}/>
+      <path d="M 6 6 L 28 6 Q 32 6 32 10 L 32 22 Q 32 26 28 26 L 12 26 L 8 30 L 10 26 L 8 26 Q 4 26 4 22 L 4 10 Q 4 6 8 6 Z" stroke="white" strokeWidth="1.5" fill="none" opacity="0.9"/>
+      <circle cx="12" cy="16" r="1.2" fill="white" opacity="0.8"/>
+      <circle cx="18" cy="16" r="1.2" fill="white" opacity="0.6"/>
+      <circle cx="24" cy="16" r="1.2" fill="white" opacity="0.4"/>
+    </svg>
+  );
+}
 
 // ── HELPERS ──
 function toast(msg) {
@@ -288,7 +309,7 @@ function JobCard({job, onClick, onApply}){
         <div style={{marginBottom:8}}>
           <div className="match-row" style={{marginBottom:4}}>
             <div style={{display:'flex',alignItems:'center',gap:4}}>
-              <img src={CLAUDE_LOGO} alt="Claude" style={{width:13,height:13,borderRadius:3,objectFit:'cover',flexShrink:0}}/>
+              <AiLogo size={13} style={{flexShrink:0}}/>
               <span className="match-label">AI Insights</span>
             </div>
             <div className="match-track"><div className="match-fill" style={{width:job.match+'%',background:matchFill}}/></div>
@@ -428,7 +449,7 @@ function AIPanel({onMatch,user}){
         <div className="ai-panel-title">
           <span>✦</span> AI CV Matcher
         </div>
-        <span className="ai-badge">Claude-powered</span>
+        <span className="ai-badge">AI-powered</span>
       </div>
       <p style={{fontSize:13,color:'var(--text2)',lineHeight:1.6}}>
         Upload your CV once, then your match can refresh daily from your stored profile CV.
@@ -527,7 +548,7 @@ function JobModal({job, onClose, user}){
         </div>
         <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:14}}>
           {job.tags.map(t=><Tag key={t} type="gray">{t}</Tag>)}
-          {job.match&&<Tag type="blue"><img src={CLAUDE_LOGO} alt="" style={{width:10,height:10,borderRadius:2,objectFit:'cover',verticalAlign:'middle',marginRight:3}}/>{job.match}% match</Tag>}
+          {job.match&&<Tag type="blue"><AiLogo size={10} style={{verticalAlign:'middle',marginRight:3,display:'inline-block'}}/>{job.match}% match</Tag>}
         </div>
         <p style={{fontSize:13,color:'var(--text2)',lineHeight:1.65,marginBottom:14}}>{job.desc}</p>
         <div className="two-col" style={{marginBottom:14}}>
@@ -1998,7 +2019,7 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,marginBottom:10,flexWrap:'wrap'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{width:34,height:34,borderRadius:10,background:'linear-gradient(135deg,#0A2E5C,#2563EB)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <img src={CLAUDE_LOGO} alt="Claude" style={{width:18,height:18}}/>
+            <AiLogo size={18}/>
           </div>
           <div>
             <div style={{fontSize:14.5,fontWeight:800,fontFamily:"'Plus Jakarta Sans',sans-serif",color:'var(--text)',letterSpacing:'-.02em'}}>Your AI top picks</div>
@@ -2968,7 +2989,7 @@ function Internships({setPage,onViewCompany}){
               )}
               {/* AI Insights banner — tap to open the full AI career panel */}
               <div style={{display:'flex',alignItems:'center',gap:9,padding:'9px 14px',background:'linear-gradient(135deg,#0A2E5C,#2563EB)',borderRadius:10,marginBottom:10,cursor:'pointer'}} onClick={()=>setPage('ai_insights')}>
-                <img src={CLAUDE_LOGO} alt="Claude" style={{width:26,height:26,borderRadius:7,flexShrink:0}}/>
+                <AiLogo size={26} style={{flexShrink:0}}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:12,fontWeight:800,color:'#fff',lineHeight:1.2}}>AI Insights</div>
                   <div style={{fontSize:11,color:'rgba(255,255,255,.75)'}}>Chat, career advice & full analysis →</div>
@@ -12651,7 +12672,7 @@ Tone: warm, concrete, African-context aware. Skip filler ("Great question!", "I'
       {/* Hero — compact, fixed */}
       <div className="ai2-hero">
         <div className="ai2-hero-icon" style={{padding:0,overflow:'hidden'}}>
-          <img src={CLAUDE_LOGO} alt="Claude" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+          <AiLogo size={52} rx={14}/>
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div className="ai2-hero-title">AI Career Assistant</div>
@@ -12660,7 +12681,7 @@ Tone: warm, concrete, African-context aware. Skip filler ("Great question!", "I'
             {hasPrefs&&' · preferences active'}
           </div>
         </div>
-        {claudeReady&&<div className="ai2-hero-badge">⚡ Claude AI Active</div>}
+        {claudeReady&&<div className="ai2-hero-badge">⚡ AI Active</div>}
         {(cacheStale||newJobsSinceMatch>0)&&(
           <span className="ai2-new-badge" style={{cursor:'pointer'}} onClick={()=>{window.__pendingJobToOpen=null;if(window.__setPage)window.__setPage('internships');}}>
             <span className="material-symbols-rounded" style={{fontSize:12}}>sync</span>
@@ -12686,7 +12707,7 @@ Tone: warm, concrete, African-context aware. Skip filler ("Great question!", "I'
       {/* ── CHAT — fills full height, no outer scroll ── */}
       {tab==='chat'&&(
         <div style={{display:'flex',flexDirection:'column',height:'100%',minHeight:0}}>
-          {claudeReady&&<div className="ai2-claude-badge"><img src={CLAUDE_LOGO} alt="Claude" style={{width:13,height:13,borderRadius:4,objectFit:'cover'}}/>Powered by Claude AI</div>}
+          {claudeReady&&<div className="ai2-claude-badge"><AiLogo size={13}/>Powered by ALUHub AI</div>}
           <div className="ai2-chat-wrap">
             <div className="ai2-quick-row">
               {['Review my CV','Find matching jobs','Skills to learn','Interview tips','Cover letter help','My preferences'].map(p=>(
@@ -12704,7 +12725,7 @@ Tone: warm, concrete, African-context aware. Skip filler ("Great question!", "I'
                 <div key={i} className={'ai2-msg '+m.role}>
                   <div className="ai2-av">
                     {m.role==='ai'
-                      ?<img src={CLAUDE_LOGO} alt="Claude"/>
+                      ?<AiLogo size={30}/>
                       :(profile.avatar_url
                         ?<img src={profile.avatar_url} alt=""/>
                         :(profile.full_name||user?.form?.name||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase())
@@ -12719,7 +12740,7 @@ Tone: warm, concrete, African-context aware. Skip filler ("Great question!", "I'
               {typing&&(
                 <div className="ai2-msg ai">
                   <div className="ai2-av">
-                    <img src={CLAUDE_LOGO} alt="Claude"/>
+                    <AiLogo size={30}/>
                   </div>
                   <div className="ai2-bubble" style={{padding:'8px 12px'}}>
                     <div className="ai2-typing-row"><div className="ai2-dot"/><div className="ai2-dot"/><div className="ai2-dot"/></div>
@@ -13242,7 +13263,7 @@ function AICoachModal({job,user,onClose,onUseRefined}){
       <div className="aic-modal" onClick={e=>e.stopPropagation()}>
         <div className="aic-head">
           <div className="aic-head-icon">
-            <img src={CLAUDE_LOGO} alt="Claude" style={{width:22,height:22}}/>
+            <AiLogo size={22}/>
           </div>
           <div style={{flex:1,minWidth:0}}>
             <div className="aic-head-title">AI Application Coach</div>
@@ -13867,7 +13888,7 @@ How to respond:
     <div className="main aco-page">
       <div className="aco-hero">
         <div className="aco-hero-icon">
-          <img src={CLAUDE_LOGO} alt="Claude" style={{width:24,height:24}}/>
+          <AiLogo size={24}/>
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div className="aco-hero-title">Compass · AI Career Guide</div>
@@ -13969,7 +13990,7 @@ How to respond:
                   <div className="aco-av">
                     {m.role==='user'
                       ? (firstName.slice(0,1).toUpperCase())
-                      : <img src={CLAUDE_LOGO} alt="Claude"/>
+                      : <AiLogo size={30}/>
                     }
                   </div>
                   <div className="aco-bubble" style={{whiteSpace:'pre-wrap'}}>{m.content}</div>
@@ -13977,7 +13998,7 @@ How to respond:
               ))}
               {thinking && (
                 <div className="aco-msg ai">
-                  <div className="aco-av"><img src={CLAUDE_LOGO} alt="Claude"/></div>
+                  <div className="aco-av"><AiLogo size={30}/></div>
                   <div className="aco-bubble">
                     <div className="aco-typing">
                       <span className="aco-dot"/><span className="aco-dot"/><span className="aco-dot"/>
@@ -14013,7 +14034,7 @@ How to respond:
                   <div className="aco-av">
                     {m.role==='user'
                       ? (firstName.slice(0,1).toUpperCase())
-                      : <img src={CLAUDE_LOGO} alt="Claude"/>
+                      : <AiLogo size={30}/>
                     }
                   </div>
                   <div className="aco-bubble">{m.content}</div>
@@ -14021,7 +14042,7 @@ How to respond:
               ))}
               {thinking && (
                 <div className="aco-msg ai">
-                  <div className="aco-av"><img src={CLAUDE_LOGO} alt="Claude"/></div>
+                  <div className="aco-av"><AiLogo size={30}/></div>
                   <div className="aco-bubble">
                     <div className="aco-typing">
                       <span className="aco-dot"/><span className="aco-dot"/><span className="aco-dot"/>
@@ -14537,7 +14558,7 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
                 data-label={n.label}
               >
                 {n.id==='ai_insights'
-                  ?<img src={CLAUDE_LOGO} alt="Claude" className="sb-nav-icon" style={{width:21,height:21,borderRadius:6,objectFit:'cover',opacity:page==='ai_insights'?1:0.55}}/>
+                  ?<AiLogo size={21} className="sb-nav-icon" style={{opacity:page==='ai_insights'?1:0.55}}/>
                   :<span className="material-symbols-rounded sb-nav-icon">{n.icon}</span>
                 }
                 <span className="sb-nav-label">{n.label}</span>
