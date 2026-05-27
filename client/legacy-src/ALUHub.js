@@ -13435,55 +13435,128 @@ function CompassPage({user}){
     if(endRef.current) endRef.current.scrollIntoView({behavior:'smooth',block:'end'});
   },[messages,thinking]);
 
-  // ── SESSION PERSISTENCE ───────────────────────────────────────────
-  // Save the full Compass state to compass_sessions on every change so
-  // the student can refresh, log out, come back tomorrow, and pick up
-  // mid-interview. One row per student; upsert keyed on student_id.
+  // ── SESSION HISTORY ───────────────────────────────────────────────
+  // Each student can have multiple Compass conversations. The history
+  // panel lists them, lets them pick one to continue, or delete any.
+  // All rows belong to compass_sessions, keyed by id (uuid PK).
   const uid=user?.user?.id;
   const [sessionLoaded,setSessionLoaded]=useState(false);
+  const [sessions,setSessions]=useState([]);          // [{id,title,stage,updated_at}]
+  const [currentId,setCurrentId]=useState(null);
+  const [showHistory,setShowHistory]=useState(false);
 
-  // Load saved session on mount (once we know the user id)
+  // Helper: refresh the list of all sessions for this student
+  async function refreshSessions(){
+    const c=getSB(); if(!c||!uid) return [];
+    const {data,error:dbErr}=await c.from('compass_sessions')
+      .select('id,title,stage,updated_at,messages')
+      .eq('student_id',uid)
+      .order('updated_at',{ascending:false});
+    if(dbErr){ console.warn('[Compass] sessions list:',dbErr.message); return []; }
+    const list=(data||[]).map(r=>({
+      id:r.id,
+      title:r.title||deriveTitle(r.messages)||'New conversation',
+      stage:r.stage,
+      updated_at:r.updated_at,
+    }));
+    setSessions(list);
+    return data||[];
+  }
+
+  function deriveTitle(msgs){
+    if(!Array.isArray(msgs)) return null;
+    const firstUser=msgs.find(m=>m.role==='user');
+    const text=firstUser?.content?.trim()||'';
+    if(!text) return null;
+    return text.length>50?text.slice(0,50)+'…':text;
+  }
+
+  // Load history + most recent session on mount
   useEffect(()=>{
     if(!uid){ setSessionLoaded(true); return; }
-    const c=getSB(); if(!c){ setSessionLoaded(true); return; }
     let cancelled=false;
-    c.from('compass_sessions')
-      .select('messages,recommendations,prep_plans,stage,ready')
-      .eq('student_id',uid)
-      .maybeSingle()
-      .then(({data,error:dbErr})=>{
-        if(cancelled) return;
-        if(dbErr){ console.warn('[Compass] session load:',dbErr.message); }
-        if(data){
-          if(Array.isArray(data.messages)&&data.messages.length) setMessages(data.messages);
-          if(data.recommendations) setRecs(data.recommendations);
-          if(data.stage) setStage(data.stage);
-          if(data.ready) setReady(true);
-          console.log('[Compass] restored session — stage='+(data.stage||'?')+', messages='+(data.messages?.length||0));
-        }
-        setSessionLoaded(true);
-      });
+    refreshSessions().then(rows=>{
+      if(cancelled) return;
+      if(rows.length){
+        const latest=rows[0];
+        setCurrentId(latest.id);
+        if(Array.isArray(latest.messages)&&latest.messages.length) setMessages(latest.messages);
+        if(latest.recommendations) setRecs(latest.recommendations);
+        if(latest.stage) setStage(latest.stage);
+        if(latest.ready) setReady(true);
+        console.log('[Compass] restored latest session — stage='+(latest.stage||'?')+', messages='+(latest.messages?.length||0));
+      }
+      setSessionLoaded(true);
+    });
     return ()=>{ cancelled=true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[uid]);
 
-  // Save session whenever messages/stage/recs change (after initial load)
+  // Save the current session on every change (creates a new row if no
+  // currentId yet, otherwise updates by id).
   useEffect(()=>{
     if(!sessionLoaded||!uid) return;
-    if(stage==='welcome'&&messages.length===0) return; // nothing to save yet
+    if(stage==='welcome'&&messages.length===0) return; // nothing to save
     const c=getSB(); if(!c) return;
-    const payload={
-      student_id:uid,
-      messages,
-      recommendations:recs,
-      stage,
-      ready,
-    };
-    c.from('compass_sessions').upsert(payload,{onConflict:'student_id'})
-      .then(({error:dbErr})=>{
-        if(dbErr) console.warn('[Compass] session save:',dbErr.message);
+    const title=deriveTitle(messages)||'New conversation';
+    if(currentId){
+      c.from('compass_sessions').update({
+        messages,recommendations:recs,stage,ready,title,
+      }).eq('id',currentId).then(({error:dbErr})=>{
+        if(dbErr) console.warn('[Compass] session update:',dbErr.message);
       });
-  },[messages,stage,recs,ready,sessionLoaded,uid]);
+    } else {
+      c.from('compass_sessions').insert({
+        student_id:uid,messages,recommendations:recs,stage,ready,title,
+      }).select('id').single().then(({data,error:dbErr})=>{
+        if(dbErr){ console.warn('[Compass] session insert:',dbErr.message); return; }
+        if(data?.id){ setCurrentId(data.id); refreshSessions(); }
+      });
+    }
+  },[messages,stage,recs,ready,sessionLoaded,uid,currentId]);
+
+  // Load a specific session by id (when user picks one from history)
+  async function loadSession(id){
+    const c=getSB(); if(!c) return;
+    const {data,error:dbErr}=await c.from('compass_sessions')
+      .select('messages,recommendations,prep_plans,stage,ready')
+      .eq('id',id).single();
+    if(dbErr){ console.warn('[Compass] load session:',dbErr.message); return; }
+    setMessages(Array.isArray(data.messages)?data.messages:[]);
+    setRecs(data.recommendations||null);
+    setStage(data.stage||'welcome');
+    setReady(!!data.ready);
+    setPrepFor(null);
+    setErrMsg('');
+    setCurrentId(id);
+    setShowHistory(false);
+  }
+
+  // Start a new empty conversation (saved on first message)
+  function newSession(){
+    setCurrentId(null);
+    setMessages([]);
+    setRecs(null);
+    setPrepFor(null);
+    setReady(false);
+    setStage('welcome');
+    setErrMsg('');
+    setShowHistory(false);
+  }
+
+  // Delete a specific session. If it's the active one, drop back to a
+  // fresh welcome state (or load the next most recent session).
+  async function deleteSession(id){
+    if(!confirm('Delete this conversation? This cannot be undone.')) return;
+    const c=getSB(); if(!c) return;
+    await c.from('compass_sessions').delete().eq('id',id);
+    const rest=sessions.filter(s=>s.id!==id);
+    setSessions(rest);
+    if(currentId===id){
+      if(rest.length) loadSession(rest[0].id);
+      else newSession();
+    }
+  }
 
   function startInterview(){
     const greeting=`Hi ${firstName}, I'm Compass. I'll ask a few short questions to understand what you're aiming for, then surface 3 live opportunities on ALUHub that fit. Ready? Tell me — what problem in the world feels most worth your time right now?`;
@@ -13582,19 +13655,6 @@ How to respond:
       setMessages(m=>[...m,{role:'assistant',content:'Sorry — I hit an error reaching the server. Try again in a moment.'}]);
     }finally{
       setThinking(false);
-    }
-  }
-
-  function resetSession(){
-    if(!confirm('Start a new Compass interview? Your current conversation will be replaced.')) return;
-    setMessages([]);
-    setRecs(null);
-    setPrepFor(null);
-    setReady(false);
-    setStage('welcome');
-    const c=getSB();
-    if(c&&uid){
-      c.from('compass_sessions').delete().eq('student_id',uid).then(()=>{});
     }
   }
 
@@ -13742,16 +13802,6 @@ How to respond:
     if(window.__setPage) window.__setPage('internships');
   }
 
-  function resetCompass(){
-    setStage('welcome');
-    setMessages([]);
-    setReady(false);
-    setRecs(null);
-    setAllJobs([]);
-    setPrepFor(null);
-    setErrMsg('');
-  }
-
   return (
     <div className="main aco-page">
       <div className="aco-hero">
@@ -13760,23 +13810,62 @@ How to respond:
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div className="aco-hero-title">Compass · AI Career Guide</div>
-          <div className="aco-hero-sub">Short interview → 3 live opportunities → personal prep plan, in one flow.</div>
+          <div className="aco-hero-sub">Chat, get recommendations, build a prep plan — all saved for next time.</div>
         </div>
-        {stage!=='welcome' && (
-          <button className="aco-btn aco-btn-ghost" style={{color:'#fff',borderColor:'rgba(255,255,255,.4)'}} onClick={resetCompass} title="Start over">
-            <span className="material-symbols-rounded" style={{fontSize:15}}>refresh</span>Restart
+        <div style={{display:'flex',gap:6,flexShrink:0}}>
+          <button className="aco-btn aco-btn-ghost" style={{color:'#fff',borderColor:'rgba(255,255,255,.4)'}} onClick={()=>setShowHistory(true)} title="See past conversations">
+            <span className="material-symbols-rounded" style={{fontSize:15}}>history</span>History{sessions.length>0?` (${sessions.length})`:''}
           </button>
-        )}
+          <button className="aco-btn aco-btn-ghost" style={{color:'#fff',borderColor:'rgba(255,255,255,.4)'}} onClick={newSession} title="Start a new conversation">
+            <span className="material-symbols-rounded" style={{fontSize:15}}>add</span>New
+          </button>
+        </div>
       </div>
 
-      <div className="aco-content">
-        {stage!=='welcome' && messages.length>0 && (
-          <div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}>
-            <button onClick={resetSession} style={{display:'inline-flex',alignItems:'center',gap:5,background:'transparent',border:'1px solid var(--border)',color:'var(--text3)',padding:'5px 10px',borderRadius:18,fontSize:11.5,fontWeight:600,cursor:'pointer'}}>
-              <span className="material-symbols-rounded" style={{fontSize:13}}>restart_alt</span>Start fresh
-            </button>
+      {showHistory && (
+        <div onClick={e=>{if(e.target===e.currentTarget) setShowHistory(false);}} style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,.55)',padding:16}}>
+          <div style={{width:'100%',maxWidth:480,maxHeight:'80vh',display:'flex',flexDirection:'column',background:'var(--bg2)',borderRadius:14,boxShadow:'0 24px 80px rgba(0,0,0,.35)',overflow:'hidden'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',borderBottom:'1px solid var(--border)'}}>
+              <div style={{fontWeight:800,fontSize:15,color:'var(--text)',fontFamily:"'Plus Jakarta Sans',sans-serif"}}>Your Compass conversations</div>
+              <button onClick={()=>setShowHistory(false)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--text3)',padding:4,display:'flex'}}>
+                <span className="material-symbols-rounded" style={{fontSize:20}}>close</span>
+              </button>
+            </div>
+            <div style={{overflowY:'auto',flex:1,padding:'6px 0'}}>
+              {sessions.length===0 && (
+                <div style={{padding:'40px 20px',textAlign:'center',color:'var(--text3)',fontSize:13.5,lineHeight:1.6}}>
+                  No saved conversations yet.<br/>Start chatting and they'll appear here.
+                </div>
+              )}
+              {sessions.map(s=>(
+                <div key={s.id} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 18px',borderBottom:'1px solid var(--border)',background:s.id===currentId?'rgba(37,99,235,.06)':'transparent',cursor:'pointer'}}
+                  onClick={()=>loadSession(s.id)}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13.5,fontWeight:600,color:'var(--text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{s.title}</div>
+                    <div style={{fontSize:11.5,color:'var(--text3)',marginTop:2,display:'flex',alignItems:'center',gap:6}}>
+                      <span>{s.stage==='chat'?'Chat':s.stage==='interview'?'Interview':s.stage==='recommended'?'Recommendations':s.stage==='prepped'?'Prep plan':'Draft'}</span>
+                      <span style={{opacity:.5}}>·</span>
+                      <span>{new Date(s.updated_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span>
+                      {s.id===currentId && <><span style={{opacity:.5}}>·</span><span style={{color:'var(--accent)',fontWeight:700}}>Open</span></>}
+                    </div>
+                  </div>
+                  <button onClick={e=>{e.stopPropagation();deleteSession(s.id);}} title="Delete conversation"
+                    style={{background:'none',border:'none',cursor:'pointer',color:'var(--text3)',padding:6,display:'flex',borderRadius:6}}>
+                    <span className="material-symbols-rounded" style={{fontSize:18}}>delete_outline</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:'10px 14px',borderTop:'1px solid var(--border)'}}>
+              <button onClick={newSession} style={{width:'100%',padding:'10px',borderRadius:9,background:'var(--accent)',color:'#fff',border:'none',fontWeight:700,fontSize:13,cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                <span className="material-symbols-rounded" style={{fontSize:16}}>add</span>New conversation
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="aco-content">
 
         {stage==='welcome' && (
           <div className="aco-card">
