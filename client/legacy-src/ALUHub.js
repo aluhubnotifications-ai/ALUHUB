@@ -14124,14 +14124,14 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
             ))}
           </nav>
 
-          {/* Get the app — PWA + APK options (hidden inside the installed WebView) */}
+          {/* Get the app — PWA install (hidden inside the installed WebView) */}
           {!/ALUHubAndroid/.test(navigator.userAgent)&&(
             <div className="sb-getapp-group">
-              {/* PWA: Install as app */}
+              {/* PWA: Install as app — works on all phones, desktops, no APK needed */}
               <button
                 className="sb-getapp-card"
                 onClick={()=>window.__showInstallPrompt?.()}
-                title="Install as app — works on all devices"
+                title="Install ALUHub as an app — works on iOS, Android, and desktop"
               >
                 <span className="material-symbols-rounded sb-getapp-icon">devices</span>
                 <span className="sb-getapp-text">
@@ -14139,21 +14139,6 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
                   <span className="sb-getapp-sub">All devices</span>
                 </span>
               </button>
-
-              {/* Android: Direct APK (bypass Play Store) */}
-              <a
-                className="sb-getapp-card"
-                href={getApiUrl()+'/api/download/android'}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Download APK — may show safety warning, tap 'Install anyway'"
-              >
-                <span className="material-symbols-rounded sb-getapp-icon">android</span>
-                <span className="sb-getapp-text">
-                  <span className="sb-getapp-title">APK File</span>
-                  <span className="sb-getapp-sub">Direct download</span>
-                </span>
-              </a>
             </div>
           )}
 
