@@ -3007,6 +3007,7 @@ function Internships({setPage,onViewCompany}){
 function JobDetailPage({job,onBack,user,setPage,onViewCompany}){
   const [showApply,setShowApply]=useState(false);
   const [showCoach,setShowCoach]=useState(false);
+  const [showResearch,setShowResearch]=useState(false);
   const [apps,setApps]=useState(null);
   const [showApps,setShowApps]=useState(false);
   const [appCount,setAppCount]=useState(typeof job.applicantCount==='number'?job.applicantCount:null);
@@ -3221,6 +3222,16 @@ function JobDetailPage({job,onBack,user,setPage,onViewCompany}){
               <span className="material-symbols-rounded" style={{fontSize:16}}>auto_awesome</span>AI Coach
             </button>
           )}
+          {!isCompanyUser&&(
+            <button
+              className="btn btn-outline"
+              onClick={()=>setShowResearch(true)}
+              title="AI-generated overview, culture, red flags, and interview questions for this company"
+              style={{borderColor:'var(--accent)',color:'var(--accent)',display:'inline-flex',alignItems:'center',gap:6}}
+            >
+              <span className="material-symbols-rounded" style={{fontSize:16}}>travel_explore</span>Research company
+            </button>
+          )}
           <button className="btn btn-ghost" onClick={onBack}>
             <span className="material-symbols-rounded" style={{fontSize:16}}>arrow_back</span> {isCompanyUser?'Back to My Listings':'Back'}
           </button>
@@ -3228,6 +3239,7 @@ function JobDetailPage({job,onBack,user,setPage,onViewCompany}){
       </div>
       {showApply&&<ApplyModal job={job} user={user} onClose={()=>setShowApply(false)}/>}
       {showCoach&&<AICoachModal job={job} user={user} onClose={()=>setShowCoach(false)}/>}
+      {showResearch&&<CompanyResearchPanel app={{job}} onClose={()=>setShowResearch(false)}/>}
     </div>
   );
 }
@@ -5637,7 +5649,7 @@ function CompanyResearchPanel({app,onClose}){
     try{
       const resp=await fetch(getApiUrl()+'/api/ai/company',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
         body:JSON.stringify({company:coName,title:job.title,tags:job.tags,location:job.loc||job.location}),
       });
       if(!resp.ok) throw new Error('Research unavailable');
