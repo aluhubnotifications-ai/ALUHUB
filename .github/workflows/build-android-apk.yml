@@ -1,0 +1,93 @@
+name: Build Android APK
+
+# Builds the Android WebView wrapper (mobile/android-app) and publishes
+# the result as `aluhub.apk` on the rolling `android-latest` release.
+# That's the exact URL the server's /api/download/android route redirects
+# to, so a green run here is what makes the in-app download button work.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/android-app/**'
+      - '.github/workflows/build-android-apk.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write  # needed to create/update the android-latest release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release APK
+        working-directory: mobile/android-app
+        # webAppUrl is read by app/build.gradle.kts via project.findProperty()
+        # and baked in as a string resource, so the WebView loads the right
+        # site on every install.
+        run: |
+          gradle assembleRelease \
+            -PwebAppUrl=https://aluhub.pages.dev \
+            --no-daemon \
+            --stacktrace
+
+      - name: Locate and rename APK to aluhub.apk
+        id: apk
+        run: |
+          set -euo pipefail
+          # The release output lands in app/build/outputs/apk/release/. With
+          # no release signing config wired in (gradle file falls back to
+          # the debug key), the file is named app-release-unsigned.apk OR
+          # app-release.apk depending on whether the debug signing kicked
+          # in. Grab whichever exists and rename to the canonical name the
+          # server route expects.
+          src=$(find mobile/android-app/app/build/outputs/apk/release -name "*.apk" | head -1)
+          if [ -z "$src" ]; then
+            echo "No APK produced — check the assembleRelease output above."
+            exit 1
+          fi
+          cp "$src" aluhub.apk
+          ls -lh aluhub.apk
+          echo "path=aluhub.apk" >> "$GITHUB_OUTPUT"
+          echo "size=$(stat -c%s aluhub.apk)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to android-latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: ALUHub Android — latest build
+          body: |
+            Auto-built from commit `${{ github.sha }}` on `${{ github.ref_name }}`.
+
+            Direct install URL (what the in-app download button points at):
+            `https://github.com/${{ github.repository }}/releases/download/android-latest/aluhub.apk`
+
+            ⚠ Build is debug-signed (no release keystore configured). Android
+            will show an "unknown app" warning on install — tap **Install
+            anyway**. To produce a Play-Store-grade signed build, set the
+            `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`,
+            `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` env vars in this
+            workflow from repo secrets.
+          files: aluhub.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Always replace the asset on the rolling tag so /api/download/android
+          # keeps pointing at the freshest build.
+          make_latest: 'false'

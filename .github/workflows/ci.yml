@@ -1,0 +1,64 @@
+name: CI
+
+# Verification workflow — runs on every push and PR so the Actions tab
+# shows the build status. Does NOT deploy; Cloudflare Pages and Render
+# handle their own deploys from main on their side. This catches type
+# errors and build breakages before they reach the deploy.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  server:
+    name: Server — typecheck & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies (incl. dev)
+        run: npm ci --include=dev || npm install --include=dev
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  client:
+    name: Client — build legacy bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build legacy bundle
+        # The legacy bundle (client/legacy-src → client/public/app) is
+        # what Cloudflare Pages serves; rebuilding here verifies syntax
+        # without needing Cloudflare's build infra.
+        run: npm run build:legacy
