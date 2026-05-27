@@ -2013,8 +2013,26 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
       )}
 
       {ranks!==null && top.length===0 && (
-        <div style={{padding:'14px 4px',fontSize:13,color:'var(--text2)',lineHeight:1.5}}>
-          No AI matches yet. <button onClick={()=>setPage&&setPage('internships')} style={{background:'none',border:'none',color:'var(--accent)',fontWeight:700,cursor:'pointer',padding:0,textDecoration:'underline'}}>Open Internships</button> and click <strong>Run AI Matching</strong> to score every listing against your profile. Your top picks will appear here automatically.
+        <div style={{padding:'18px 6px',display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{fontSize:13.5,color:'var(--text2)',lineHeight:1.55}}>
+            <strong style={{color:'var(--text)'}}>Let Compass interview you first.</strong> In ~2 minutes Compass asks about your goals, then surfaces your strongest matches with reasons — no manual searching needed.
+          </div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            <button
+              onClick={()=>setPage&&setPage('compass')}
+              style={{display:'inline-flex',alignItems:'center',gap:6,padding:'10px 16px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#0A2E5C,#2563EB)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(37,99,235,.3)'}}
+            >
+              <span className="material-symbols-rounded" style={{fontSize:16}}>explore</span>
+              Start with Compass
+            </button>
+            <button
+              onClick={()=>setPage&&setPage('internships')}
+              style={{display:'inline-flex',alignItems:'center',gap:6,padding:'10px 16px',borderRadius:10,border:'1.5px solid var(--border)',background:'transparent',color:'var(--text2)',fontSize:13,fontWeight:600,cursor:'pointer'}}
+            >
+              <span className="material-symbols-rounded" style={{fontSize:16}}>tune</span>
+              Or run matching manually
+            </button>
+          </div>
         </div>
       )}
 

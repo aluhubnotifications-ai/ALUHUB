@@ -734,44 +734,9 @@ aiRouter.post('/coach', async (req: Request, res: Response) => {
   }
 });
 
-// ════════════════════════════════════════════════════════════════════
-//  POST /api/ai/rank
-//  Pure cache reader — returns the student's stored match scores in
-//  rank shape. NO Claude call, NO scoring. The /match endpoint (Sonnet)
-//  is the single source of truth for scores; this endpoint just reshapes
-//  cached match rows as { job_id, score, why } for legacy callers.
-//
-//  This guarantees the dashboard and matching page show identical scores
-//  because both ultimately read the same ai_match_cache rows.
-// ════════════════════════════════════════════════════════════════════
-aiRouter.post('/rank', requireAuth, async (req: Request, res: Response) => {
-  const { jobs } = req.body as {
-    jobs: Array<{ id: string }>;
-  };
-
-  if (!Array.isArray(jobs) || jobs.length === 0) {
-    return res.status(400).json({ error: 'jobs[] required' });
-  }
-
-  const studentId = req.user!.sub;
-
-  try {
-    const cached = await readMatchCache(studentId, jobs.map((j) => j.id));
-    const rankings = cached
-      .map((m) => ({
-        job_id: m.job_id,
-        score:  m.score,
-        why:    m.tip ?? (m.reasons[0] ?? null),
-      }))
-      .sort((a, b) => b.score - a.score);
-
-    console.log(`[ai/rank] student=${studentId} returned ${rankings.length}/${jobs.length} from cache`);
-    res.json({ rankings, model: 'cache', usage: null, fromCache: rankings.length });
-  } catch (err) {
-    console.warn('[ai/rank] failed:', err);
-    res.status(500).json({ error: 'Rank failed' });
-  }
-});
+// /api/ai/rank was removed — the dashboard now reads ai_match_cache directly
+// via the Supabase client. /match (Sonnet) is the single writer; every reader
+// pulls from the same DB rows so scores never drift between surfaces.
 
 // ════════════════════════════════════════════════════════════════════
 //  POST /api/ai/compass
