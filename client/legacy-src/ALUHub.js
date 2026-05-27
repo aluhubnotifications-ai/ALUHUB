@@ -2366,18 +2366,19 @@ function Internships({setPage,onViewCompany}){
               setMatchStatus('done');
               return;
             }
-            // No cached matches — auto-trigger matching if we have profile data
-            // to score against. The flow shows the same progress UI the manual
-            // button used to trigger, so the student sees what's happening.
-            // Defer with setTimeout so React has committed setJobs(dbJobs)
-            // before runMatchFlow reads `jobs` from its closure.
-            c.from('profiles').select('cv_filename,desired_roles,skills,major').eq('id',uid).maybeSingle().then(({data:p})=>{
-              const hasSignal=!!(p&&(p.cv_filename||(p.desired_roles||[]).length||(p.skills||[]).length||p.major));
-              if(hasSignal&&dbJobs.length){
+            // No cached matches — auto-trigger matching ONLY if the student
+            // has uploaded a CV. Without a CV the upload zone is shown and
+            // matching waits until they drop a file (handleFile triggers it).
+            // Defer with setTimeout so React commits setJobs(dbJobs) before
+            // runMatchFlow reads `jobs` from its closure.
+            c.from('profiles').select('cv_filename').eq('id',uid).maybeSingle().then(({data:p})=>{
+              if(p?.cv_filename&&dbJobs.length){
                 setTimeout(()=>{
-                  console.log('[ALUHub Match] Auto-matching on first visit (no cache yet)');
+                  console.log('[ALUHub Match] Auto-matching on first visit (CV present, no cache)');
                   runMatchFlow('auto');
                 },80);
+              } else {
+                console.log('[ALUHub Match] No CV — waiting for upload before matching');
               }
             });
           });
@@ -2798,19 +2799,20 @@ function Internships({setPage,onViewCompany}){
               </div>
             )}
 
-            {/* No CV upload zone */}
-            {!cvInfo.hasCV&&matchStatus==='idle'&&(
+            {/* No CV upload zone — always visible when there's no CV, even
+                while matching is happening from profile signals alone */}
+            {!cvInfo.hasCV&&(
               <div
-                style={{border:'2px dashed var(--border)',borderRadius:10,padding:'28px 20px',textAlign:'center',cursor:'pointer',transition:'all .15s'}}
+                style={{border:'2px dashed var(--accent)',borderRadius:10,padding:'28px 20px',textAlign:'center',cursor:'pointer',transition:'all .15s',background:'rgba(37,99,235,.04)'}}
                 onClick={()=>fileRef.current.click()}
                 onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor='var(--accent)';}}
-                onDragLeave={e=>{e.currentTarget.style.borderColor='var(--border)';}}
-                onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor='var(--border)';handleFile(e.dataTransfer.files[0]);}}>
+                onDragLeave={e=>{e.currentTarget.style.borderColor='var(--accent)';}}
+                onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor='var(--accent)';handleFile(e.dataTransfer.files[0]);}}>
                 <div style={{fontSize:32,marginBottom:8}}>📄</div>
-                <div style={{fontSize:14,fontWeight:600,color:'var(--text)',marginBottom:4}}><strong>Drop or click</strong> to upload your CV</div>
-                <div style={{fontSize:12,color:'var(--text3)'}}>PDF only · Max 5MB · We'll rank every listing by fit</div>
+                <div style={{fontSize:14,fontWeight:700,color:'var(--text)',marginBottom:4}}><strong>Upload your CV first</strong> to get matched</div>
+                <div style={{fontSize:12,color:'var(--text3)'}}>Drop a PDF or click · Max 5MB · We'll rank every listing by fit</div>
                 <input ref={fileRef} type="file" accept=".pdf" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])}/>
-                {cvUploading&&<div style={{marginTop:10,fontSize:13,color:'var(--text2)'}}>Uploading…</div>}
+                {cvUploading&&<div style={{marginTop:10,fontSize:13,color:'var(--accent)',fontWeight:600}}>Uploading…</div>}
               </div>
             )}
 
