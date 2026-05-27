@@ -10,60 +10,89 @@
 
 ---
 
-## The Problem: Internship Discovery Takes Too Long
+## The Real Problem: You're Wasting Time Filtering, Not Applying
 
-Right now, ALU students face a real barrier: **internship opportunities are scattered across many websites, and filtering through them wastes precious time.**
+**Right now, you're losing internships because of a simple problem: opportunities are everywhere, but finding them is painful.**
 
-Students find internships on:
-- LinkedIn
-- Company websites
-- Job boards
-- Email announcements
-- Partner sites
-- WhatsApp groups
+### The Pain You Feel
 
-**As a result:**
-- You spend 10+ minutes filtering across websites instead of **actually applying**
-- You miss good opportunities because they're buried
-- You apply to roles that don't fit, hoping something sticks
-- You lose motivation after the 5th website search
+Every week, you:
+- Scroll LinkedIn, check company websites, search job boards
+- Dig through WhatsApp group messages from career services
+- Read 100 listings to find 3 that match your year and goals
+- **Spend 10–15 minutes filtering instead of applying**
+- Miss opportunities because they get buried
+- Apply to roles that don't fit, hoping one works
 
-**The waste:** In a competitive market, time spent filtering is time you're not applying. And applying more ≈ getting hired faster.
+**By the time you've filtered, you're tired. You apply to 2–3 roles instead of 8–10.**
+
+**The result:** Slower job search. Fewer offers. More stress.
+
+### Why This Happens
+
+Internship opportunities are scattered across **too many places:**
+- LinkedIn (mixed with random jobs not for students)
+- Company websites (each company different, each separate apply)
+- Email from career services (buried in your inbox)
+- Partner websites (you never see them)
+- WhatsApp groups (easy to miss)
+- Job boards (hard to filter by year/school)
+
+**No one place has them all. So you search everywhere. And searching everywhere is exhausting.**
 
 ---
 
 ## The Solution: ALUHub Internship Portal
 
-**ALUHub** is a platform that brings internship opportunities into one place, filters them for your year, and uses Claude AI to help you find the best matches.
+**ALUHub is simple:** One place to find all internship opportunities for ALU students. Filtered for your year. With AI that helps you pick the best matches.
 
-### Here's What's Different
+**We built it because ALU deserves better.**
 
-✅ **One place to check** — all internship opportunities for your year in one app  
-✅ **Pre-filtered for you** — only see internships your year is eligible for  
-✅ **Two apply modes** — quick in-app form (if ALU posts it) OR external link to company site (if it's a partner opportunity)  
-✅ **AI Job Matcher** — upload your resume → Claude scores each job for fit (0–100%)  
-✅ **AI Company Research** — learn what a company does before you apply  
-✅ **Scalable** — other schools can join and post their own internships
+### What You Get (The Win)
 
-### How It Works
+**Instead of:** 15 min filtering → 2–3 applications → hoping one works  
+**You get:** 2 min discovering → 8–10 applications → picking the best fits
 
-**For ALU Students:**
-1. Log in and set your year (Year 1, 2, 3, or 4)
-2. Browse internships — only see roles for your year
-3. Click "Apply" → either submit our quick form OR go to the company's website
-4. Optional: Use AI Matcher to see job fit scores
+✅ **One app. One login.** All internship opportunities for ALU students in one place. No more searching LinkedIn, job boards, emails, WhatsApp.
 
-**For ALU Career Services (School):**
-1. Post an internship (your own or from a partner company)
-2. Choose: apply in-app (we handle it) or external link (company handles it)
-3. Set year restrictions (all years? Year 3+? Only Year 4?)
-4. If it's a partner company opportunity, add their name + logo
-5. Students in that year see it immediately
+✅ **Your year only.** Not seeing internships you're not eligible for. No clutter. No "Sorry, Year 4 only" after you've read it.
 
-**For Companies:**
-1. Send internship to ALU Career Services
-2. ALU decides how to post it (native or external link)
-3. Applications arrive via our form or your site, depending on mode
+✅ **AI tells you if the job fits.** Upload your resume. Claude AI scores each internship: 87% match? 45% match? It tells you why. You apply to jobs where you actually fit.
+
+✅ **Know the company before you apply.** Click on a company → Claude tells you what they do, what they're known for, what interviews are like. Walk in prepared.
+
+✅ **Apply fast.** Company internship? Quick form on our app. Partner opportunity? One click → opens their site. Done.
+
+### How It Works (Simple)
+
+1. **You** → Log in with your ALU email, set your year
+2. **We** → Show you internships for your year (nothing else)
+3. **You** → Click on a role, read about it
+4. **Optional:** Use AI → See how good a fit it is
+5. **You** → Click "Apply" → form on our app OR company's site
+6. **Done** → Company gets your application
+
+### How ALU Runs It
+
+**ALU Career Services posts internships two ways:**
+
+**Option 1: We handle applications**
+- Company sends opportunity to ALU
+- ALU posts it on ALUHub
+- You fill a quick form → goes straight to company
+- Fast, simple
+
+**Option 2: Company handles applications**
+- Company sends opportunity to ALU
+- ALU posts it with a link to company's site
+- You click "Apply" → opens company's form
+- Company stays in control
+
+**ALU decides which mode for each opportunity.** Both look the same to you — you just see company, job title, description. The "Apply" button takes you where you need to go.
+
+**Year restrictions:** ALU can say "This is for Year 3+ only" → only Year 3 and Year 4 students see it. Fair, simple.
+
+**Partner opportunities:** If another company (not ALU) sends an opportunity through ALU, ALU adds their logo and name. You know it's from them.
 
 ### The Two Apply Modes Explained
 
@@ -81,63 +110,104 @@ Students find internships on:
 
 **Both types appear the same in your feed.** You see company name, logo, and job details. The only difference is where the "Apply" button takes you.
 
-### Expanding to Other Schools
+### Other Features (Built for ALU, Expanding)
 
-Not just ALU — any education institution can:
-- Post internships for **their own students**
-- Post internships from **partner companies**
-- Set year-based restrictions (decide who sees what)
-- Choose: in-app or external link
-- All through the same ALUHub platform
+ALUHub started with **internships because that's the biggest pain.** But we're building more:
 
----
+- **Skills marketplace** (coming) — connect with peers learning Python, design, etc.
+- **Housing board** (coming) — find roommates, apartments near companies
+- **Career coaching** (coming) — AI-powered interview prep and resume review
+- **Company research** — what companies actually do, what they hire for
 
-## How Claude AI Saves You Time
-
-Claude powers two AI features that help you focus on quality applications:
-
-### 1. AI Job Matcher
-**Simple explanation:** You upload your resume. Claude reads each internship description and compares it to your profile. Then Claude tells you how good a match each role is.
-
-**What you see:**
-- Match score (0–100%)
-- 2–3 specific reasons why it's a good/bad fit
-- Which of your skills they want
-- What skills you might be missing
-
-**Impact:** You focus on roles where you have 70%+ match, not spray-and-pray applications.
-
-### 2. AI Company Research
-**Simple explanation:** You click a company name. Claude researches what that company does and tells you what to expect.
-
-**What you see:**
-- What the company does
-- What they're known for in the market
-- Types of roles they typically hire for
-- What to expect in interviews
-
-**Impact:** You walk into applications (and interviews) prepared and confident.
+**These are extras.** The core focus is **internships.** Everything else serves that.
 
 ---
 
-## Impact: What Changes
+## How AI Helps (Claude Powers It)
 
-### For Students
-- **Reduce filtering time:** from 10+ minutes → 1 minute per session
-- **Increase applications:** when discovery is fast, you apply to more roles
-- **Better matches:** AI helps you pick roles where you actually fit
-- **Interview prep:** company research = walking in prepared
+### AI Job Matcher
 
-### For Schools
-- **Centralized posting:** one place to curate and share internships
-- **Year-based control:** restrict opportunities fairly (Year 3 roles for Year 3 students only)
-- **Third-party posting:** forward partner opportunities without manual coordination
-- **Trackable data:** see where students get internships
+**How it works:** You upload your resume. Our AI (Claude) reads it, then reads each internship description, then tells you: "How good is this match for you?"
 
-### For Companies
-- **Flexible apply:** use our form (quick) or your own (full control)
-- **Targeted reach:** only shown to students in relevant years
-- **Pre-vetted talent:** students using AI matching are more likely to succeed in role
+**What you get:**
+- A score: 87% match? 45% match?
+- Why: "You have Python skills, they need Python. That's good. But you need SQL."
+- What you're missing: Clear list of skills to learn before applying
+
+**The win:** You don't waste time applying to jobs you won't get. You apply to jobs where you actually fit.
+
+### AI Company Research
+
+**How it works:** You click on a company name. Our AI researches them and tells you what they actually do and what working there is like.
+
+**What you get:**
+- What the company does (simple explanation)
+- What they're known for
+- What kind of people they hire
+- What interviews are usually like
+- How to prepare
+
+**The win:** You walk in prepared. You understand the company. You're confident in interviews.
+
+---
+
+## Your Privacy & Data (We Protect It)
+
+**Simple rule: We don't sell your data. We don't give it away. Here's exactly what we do:**
+
+### What We Store
+- Your name, email, year
+- Your resume (only on our servers, encrypted)
+- Your application history
+
+### What Goes to Claude AI
+- **NOT your name, email, or student ID**
+- **NOT your full resume file**
+- Only: job descriptions + your job preferences (what you're looking for)
+
+Claude AI uses this to score matches and research companies. **It never sees who you are.**
+
+### What We DON'T Do
+- ❌ Sell your data
+- ❌ Show your data to companies without your permission
+- ❌ Share your resume with anyone
+- ❌ Use your data for ads or tracking
+- ❌ Send your personal info to AI
+
+### Why This Matters
+- You apply with confidence knowing we protect your info
+- Companies only see what you choose to send them
+- AI can help you without knowing your identity
+
+---
+
+---
+
+## Why This Works (The Impact)
+
+### You Win Because...
+
+**Faster discovery** → Search 2 minutes, not 15  
+**More applications** → Apply to 8 instead of 2  
+**Better matches** → AI tells you if you fit  
+**Prepared for interviews** → Know the company  
+**Your privacy** → Your data stays yours
+
+**Result:** You get internships faster. You get better internships.
+
+### ALU Wins Because...
+
+**One place to post** → Career services don't scatter opportunities  
+**Fair access** → Year 3 students only see Year 3 opportunities (no confusion)  
+**Track results** → See where students actually get internships  
+**Help at scale** → AI helps coach 500 students without hiring 50 counsellors
+
+### Companies Win Because...
+
+**Pre-matched students** → Students who apply actually fit the role  
+**High-intent applicants** → They chose your company, they're serious  
+**Flexible apply** → Use our form or yours, whatever works for you  
+**Right students** → Only Year 3+ see Year 3+ roles (no wasting time on unqualified)
 
 ---
 
