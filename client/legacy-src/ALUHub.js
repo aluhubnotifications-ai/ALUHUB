@@ -2029,7 +2029,12 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
           </div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
             <button
-              onClick={()=>setPage&&setPage('profile')}
+              onClick={()=>{
+                // Navigate to Internships and signal that we want to open
+                // the file picker the moment the page mounts.
+                window.__openCvUploadOnInternships=true;
+                if(setPage) setPage('internships');
+              }}
               style={{display:'inline-flex',alignItems:'center',gap:6,padding:'10px 16px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#0A2E5C,#2563EB)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(37,99,235,.3)'}}
             >
               <span className="material-symbols-rounded" style={{fontSize:16}}>cloud_upload</span>
@@ -2391,6 +2396,19 @@ function Internships({setPage,onViewCompany}){
         const target=dbJobs.find(j=>j.id===pendingId);
         if(target) setSelectedJob(target);
       }
+
+      // If the dashboard "Upload CV & get matched" button was clicked,
+      // make sure the user is on the matching tab AND open the file
+      // picker dialog right away so there's no extra step.
+      if(window.__openCvUploadOnInternships){
+        window.__openCvUploadOnInternships=false;
+        setActiveTab('matching');
+        setTimeout(()=>{
+          if(fileRef.current){
+            try{ fileRef.current.click(); }catch(_){}
+          }
+        },250);
+      }
     }).catch(()=>setLoading(false));
     if(uid){
       dbGetProfileLite(uid).then(p=>{
@@ -2659,9 +2677,28 @@ function Internships({setPage,onViewCompany}){
             <span className="material-symbols-rounded" style={{fontSize:16}}>{t.icon}</span>
             {t.label}
             {t.id==='matching'&&matchStatus==='done'&&<span style={{background:'#03893A',color:'#fff',fontSize:10,padding:'1px 6px',borderRadius:20,fontWeight:700}}>ON</span>}
+            {t.id==='matching'&&!cvInfo.hasCV&&<span style={{background:'#F59E0B',color:'#fff',fontSize:10,padding:'1px 6px',borderRadius:20,fontWeight:700}}>CV NEEDED</span>}
           </button>
         ))}
       </div>
+
+      {/* CV upload prompt — surfaces above ALL tabs when the student
+          has no CV yet, so even if they land on Browse they see the
+          one-tap path to upload. Clicking the button opens the file
+          picker directly without forcing them to the matching tab. */}
+      {!cvInfo.hasCV&&(
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',marginBottom:14,background:'rgba(245,158,11,.08)',border:'1.5px solid rgba(245,158,11,.35)',borderRadius:10}}>
+          <span className="material-symbols-rounded" style={{fontSize:20,color:'#F59E0B',flexShrink:0}}>upload_file</span>
+          <div style={{flex:1,minWidth:0,fontSize:13,color:'var(--text)',lineHeight:1.5}}>
+            <strong>Upload your CV</strong> so AI can match you with these listings.
+          </div>
+          <button onClick={()=>{ if(fileRef.current){ try{ fileRef.current.click(); }catch(_){} } }}
+            style={{display:'inline-flex',alignItems:'center',gap:5,padding:'7px 13px',borderRadius:8,border:'none',background:'#F59E0B',color:'#fff',fontSize:12.5,fontWeight:700,cursor:'pointer',flexShrink:0}}>
+            <span className="material-symbols-rounded" style={{fontSize:15}}>cloud_upload</span>Upload now
+          </button>
+          <input ref={fileRef} type="file" accept=".pdf" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])}/>
+        </div>
+      )}
 
       {/* ══════════ OVERVIEW TAB ══════════ */}
       {activeTab==='overview'&&(
