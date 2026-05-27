@@ -60,6 +60,30 @@ Internship opportunities are scattered across **too many places:**
 
 **Other schools can use it too.** But ALUHub is built around ALU's structure, values, and students first.
 
+### The Roadmap: How We Launch & Grow
+
+**Phase 1: Start with ALU (Now)**
+- ALU Career Services curates all opportunities
+- Companies send internships to ALU
+- ALU decides: in-app apply or external link
+- ALU controls the experience, the fairness, the quality
+- **Result:** Curated, trusted, ALU-vetted opportunities
+
+**Phase 2: Direct Company Partnerships (Soon)**
+- We sign contracts with companies (Andela, Flutterwave, etc.)
+- Companies post directly on ALUHub without going through ALU
+- **But:** Companies still respect ALU rules (year restrictions, fair access)
+- **And:** They choose how students apply (our form or theirs)
+- **Result:** More opportunities, faster posting, companies talk directly to students
+
+**Phase 3: Other Schools (Later)**
+- Other African schools use the same platform
+- Each school curates for their students
+- Companies can reach multiple schools at once
+- **Result:** Network effect — more companies, more opportunities, more schools
+
+**Why this order?** Trust first. ALU Career Services filters bad opportunities. Then scale. Then let it grow.
+
 ### What You Get (The Win)
 
 **Instead of:** 15 min filtering → 2–3 applications → hoping one works  
