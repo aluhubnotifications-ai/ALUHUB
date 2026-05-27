@@ -5661,13 +5661,39 @@ function CompanyResearchPanel({app,onClose}){
 
   useEffect(()=>{ runResearch(); },[]);
 
+  // Responsive: centred modal with rounded corners on desktop (≥640px),
+  // bottom-anchored sheet on mobile so the user can dismiss with a swipe-down
+  // gesture from the handle bar.
+  const isMobile=typeof window!=='undefined'&&window.innerWidth<640;
   return(
-    <div style={{position:'fixed',inset:0,zIndex:1100,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'rgba(0,0,0,.45)'}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{width:'100%',maxWidth:600,maxHeight:'88vh',overflowY:'auto',background:'var(--bg2)',borderRadius:'20px 20px 0 0',padding:0,boxShadow:'0 -8px 40px rgba(0,0,0,.25)'}}>
-        {/* Handle bar */}
-        <div style={{display:'flex',justifyContent:'center',padding:'12px 0 0'}}><div style={{width:40,height:4,borderRadius:2,background:'var(--border2)'}}/></div>
+    <div
+      style={{
+        position:'fixed',inset:0,zIndex:9999,
+        display:'flex',
+        alignItems:isMobile?'flex-end':'center',
+        justifyContent:'center',
+        background:'rgba(0,0,0,.55)',
+        padding:isMobile?0:16,
+        overscrollBehavior:'contain',
+      }}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}
+    >
+      <div
+        style={{
+          width:'100%',
+          maxWidth:640,
+          maxHeight:isMobile?'92vh':'min(88vh,820px)',
+          overflowY:'auto',
+          background:'var(--bg2)',
+          borderRadius:isMobile?'20px 20px 0 0':16,
+          boxShadow:'0 24px 80px rgba(0,0,0,.35)',
+          WebkitOverflowScrolling:'touch',
+        }}
+      >
+        {/* Handle bar (mobile only) */}
+        {isMobile&&<div style={{display:'flex',justifyContent:'center',padding:'12px 0 0'}}><div style={{width:40,height:4,borderRadius:2,background:'var(--border2)'}}/></div>}
         {/* Header */}
-        <div style={{display:'flex',alignItems:'center',gap:14,padding:'16px 20px 14px',borderBottom:'1px solid var(--border)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:14,padding:'16px 20px 14px',borderBottom:'1px solid var(--border)',position:'sticky',top:0,background:'var(--bg2)',zIndex:1}}>
           <div style={{width:52,height:52,borderRadius:12,flexShrink:0,overflow:'hidden',border:'1.5px solid var(--border)',background:'var(--bg3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
             {job.avatar_url
               ?<img src={job.avatar_url} alt={coName} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -5706,7 +5732,7 @@ function CompanyResearchPanel({app,onClose}){
                   <p style={{fontSize:13.5,color:'var(--text)',lineHeight:1.65,margin:0}}>{research.overview}</p>
                 </div>
               )}
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:10}}>
                 {research.culture&&(
                   <div style={{background:'rgba(59,130,246,.07)',borderRadius:10,padding:'12px 14px',border:'1px solid rgba(59,130,246,.15)'}}>
                     <div style={{fontSize:11,fontWeight:700,color:'#3B82F6',textTransform:'uppercase',letterSpacing:.8,marginBottom:6,display:'flex',alignItems:'center',gap:4}}>
