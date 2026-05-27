@@ -1,0 +1,83 @@
+================================================================================
+                    ALUHUB DEMO VIDEO - RECORDING CHEATSHEET
+================================================================================
+
+LOGIN: student@alustudent.com / Demo2026!
+WEBSITE: https://aluhub.pages.dev
+YEAR: Set to "Year 3"
+
+================================================================================
+10 STEPS - 4 MINUTES 30 SECONDS - JUST FOLLOW IN ORDER
+================================================================================
+
+[0:00-0:30] OPENING (No screen)
+SAY: "Right now, you're wasting time. You search LinkedIn, check job boards,
+scroll WhatsApp. Fifteen minutes later, three okay opportunities. You're tired.
+You apply to two jobs. But you should be applying to eight. That's how you get
+hired."
+
+[0:30-1:00] SHOW LOGIN PAGE
+SAY: "This is ALUHub. One place. All internship opportunities for ALU students.
+Filtered for your year. With AI that tells you if the job actually fits."
+
+[1:00-1:30] LOG IN (Type slowly)
+DO: Log in with email/password. Wait for page to load.
+SAY: "Log in with your ALU email. Set your year. I'm Year 3."
+
+[1:30-1:50] SHOW YEAR FILTER
+DO: Click dropdown, select "Year 3"
+SAY: "Choose your year. Now you only see internships for Year 3 students.
+No clutter. Just internships you can apply to."
+
+[1:50-2:30] BROWSE INTERNSHIPS (Scroll slowly)
+DO: Show 4-5 internship cards. Scroll down. Stop on one.
+SAY: "Here are the internships. Logo. Title. Description. How many apply?
+All of them? No. Watch this."
+
+[2:30-3:15] CLICK AI MATCHER
+DO: Click button. Upload resume. Wait for AI to process (3-4 seconds).
+SAY: "Click AI Matcher. Upload your resume. AI reads it. Reads the job.
+Then tells you: how good is this match?"
+
+[3:15-3:50] SHOW MATCH SCORES
+DO: Show first job (87% match). Show explanation. Show another job (45% match).
+SAY: "87% match. You know Python, they need Python. But you need SQL.
+Another job: 45%. Too low. Apply to the 87% jobs. That's how you get hired."
+
+[3:50-4:15] CLICK COMPANY NAME
+DO: Click company name. Show research results.
+SAY: "Before you apply, want to know what they do? Click their name.
+AI researches them. What they're known for. What interviews are like.
+You walk in prepared."
+
+[4:15-4:35] SHOW APPLY BUTTON
+DO: Click Apply. Show form (in-app) or website (external link).
+SAY: "Applying is simple. Some opportunities: quick form here. Others:
+one click to their website. Either way, you apply in seconds."
+
+[4:35-4:50] CLOSING
+DO: Show website URL: aluhub.pages.dev
+SAY: "That's ALUHub. Find internships faster. Apply smarter. Get hired.
+Start now at aluhub.pages.dev"
+
+================================================================================
+RECORDING TIPS
+================================================================================
+✓ SLOW DOWN - Type slow, click slow, wait 1-2 seconds after each action
+✓ SPEAK NATURALLY - Don't sound like a robot, pause between sentences
+✓ AUDIO - Clear voice, no background noise, decent mic
+✓ SCREEN - Zoom to 125% so text is readable
+✓ ZOOM - Don't zoom in/out during video
+✓ PRACTICE - Do a test run first
+
+================================================================================
+TOOLS (Pick one)
+================================================================================
+• OBS Studio (free, all platforms)
+• Loom (free, easy)
+• ScreenFlow (Mac)
+• QuickTime (Mac, built-in)
+
+================================================================================
+THAT'S IT. Just follow the 10 steps. You got this. 🎬
+================================================================================
