@@ -13686,20 +13686,21 @@ function CompassPage({user}){
 
         {stage==='welcome' && (
           <div className="aco-card">
-            <div style={{fontSize:14,color:'var(--text2)',lineHeight:1.7,marginBottom:14}}>
-              Compass is a three-step agent powered by Claude:
-              <ol style={{margin:'10px 0 0 18px',padding:0,color:'var(--text)'}}>
-                <li style={{marginBottom:6}}><strong>Interview</strong> — a short conversation about what you actually want.</li>
-                <li style={{marginBottom:6}}><strong>Recommend</strong> — Compass picks 3 live ALUHub roles that fit, with reasoning.</li>
-                <li><strong>Prep plan</strong> — Compass builds a personal plan for the role you pick.</li>
-              </ol>
-              <div style={{marginTop:12,padding:'8px 10px',background:'rgba(37,99,235,.06)',borderRadius:8,fontSize:12,color:'var(--text3)',lineHeight:1.55}}>
-                <span className="material-symbols-rounded" style={{fontSize:13,verticalAlign:'middle',marginRight:4,color:'var(--accent)'}}>save</span>
-                Your conversation auto-saves — refresh or come back later and pick up right where you left off.
+            <div style={{fontSize:15,color:'var(--text)',lineHeight:1.6,marginBottom:6,fontWeight:600}}>
+              Hi {firstName} — let's find the right opportunity for you.
+            </div>
+            <div style={{fontSize:13.5,color:'var(--text2)',lineHeight:1.65,marginBottom:14}}>
+              Instead of scrolling through 40+ listings, answer 4 quick questions about what you actually want. I'll then show you the 3 strongest matches with honest reasons, and build a personal plan for the one you pick.
+              <div style={{marginTop:10,fontSize:12.5,color:'var(--text3)'}}>
+                ⏱️ Takes ~2 minutes · 💬 Conversational, no forms · 🎯 No fluff scores
               </div>
             </div>
+            <div style={{padding:'10px 12px',background:'rgba(37,99,235,.06)',borderRadius:8,fontSize:12,color:'var(--text3)',lineHeight:1.55,marginBottom:14}}>
+              <span className="material-symbols-rounded" style={{fontSize:13,verticalAlign:'middle',marginRight:4,color:'var(--accent)'}}>save</span>
+              Your conversation auto-saves — refresh or come back later and pick up right where you left off.
+            </div>
             <button className="aco-btn" onClick={startInterview}>
-              <span className="material-symbols-rounded" style={{fontSize:16}}>auto_awesome</span>Start the interview
+              <span className="material-symbols-rounded" style={{fontSize:16}}>auto_awesome</span>Let's start
             </button>
           </div>
         )}
