@@ -1919,20 +1919,15 @@ function OnboardingWizard({user,onComplete}){
 }
 
 // ── AI TOP PICKS ─────────────────────────────────────
-// Reads ranked matches directly from the ai_match_cache DB table — the
-// SAME source as the Internships matching page, so both surfaces show
-// identical scores. Falls back to /api/ai/rank only when the student has
-// never run matching (empty cache). Subscribes to cache changes so the
-// dashboard updates the moment a new match comes in.
+// Pure reader of ai_match_cache — never calls /api/ai/rank, never writes
+// to the DB. The Internships page is the single source of writes (via
+// /api/ai/match). This guarantees dashboard scores always equal matching-
+// page scores: both render the same DB rows.
 function AITopPicks({jobs,user,setPage,setApplyJob}){
-  const profile=user?.profile||{};
   const uid=user?.user?.id;
-  const [ranks,setRanks]=useState(null); // null=loading, []=none, [...]=ranked
-  const [error,setError]=useState('');
+  const [ranks,setRanks]=useState(null); // null=loading, []=empty cache, [...]=ranked
   const [refreshing,setRefreshing]=useState(false);
-  const [source,setSource]=useState('cache'); // 'cache' | 'rank' — for the UI label
 
-  // Read the top matches from ai_match_cache. Same query the matching page uses.
   async function readFromCache(){
     const c=getSB();
     if(!c||!uid) return null;
@@ -1942,96 +1937,41 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
       .order('score',{ascending:false})
       .limit(20);
     if(dbErr){ console.warn('[AITopPicks] cache read failed:',dbErr.message); return null; }
-    if(!data||!data.length) return null;
-    // Translate cache rows into the {job_id, score, why} shape the UI expects
-    return data.map(r=>({
+    return (data||[]).map(r=>({
       job_id: r.job_id,
       score:  r.score,
       why:    r.tip || (Array.isArray(r.match_reasons)&&r.match_reasons[0]?.label) || (Array.isArray(r.match_reasons)&&r.match_reasons[0]) || null,
     }));
   }
 
-  // Fallback: ask /api/ai/rank only when nothing is cached yet.
-  // The backend itself reads ai_match_cache first, so this fills the cache too.
-  async function runRank(){
-    if(!uid||!jobs.length) return;
-    setRefreshing(true);
-    setError('');
-    try{
-      const payload={
-        profile:{
-          major:profile.major,year:profile.year,bio:profile.bio,
-          desired_roles:profile.desired_roles,preferred_industries:profile.preferred_industries,
-          skills:profile.skills,work_type:profile.work_type,location_pref:profile.location_pref,
-        },
-        jobs:jobs.slice(0,40).map(j=>({
-          id:j.id,title:j.title,description:j.description,
-          type:j.listing_type||j.type,location:j.loc||j.location,tags:j.tags||[],
-        })),
-      };
-      const res=await fetch(getApiUrl()+'/api/ai/rank',{
-        method:'POST',
-        headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
-        body:JSON.stringify(payload),
-      });
-      if(!res.ok){
-        const err=await res.json().catch(()=>({}));
-        throw new Error(err.error||'Server returned '+res.status);
-      }
-      const data=await res.json();
-      setRanks(data.rankings||[]);
-      setSource('rank');
-    }catch(e){
-      console.warn('[AITopPicks] rank failed:',e);
-      setError(e.message||'Could not rank');
-      setRanks([]);
-    }finally{
-      setRefreshing(false);
-    }
-  }
-
-  // Refresh = re-read DB cache first; only call /rank if still empty
   async function refresh(){
     setRefreshing(true);
     const cached=await readFromCache();
-    if(cached&&cached.length){
-      setRanks(cached);
-      setSource('cache');
-      setRefreshing(false);
-    } else {
-      await runRank();
-    }
+    setRanks(cached||[]);
+    setRefreshing(false);
   }
 
   useEffect(()=>{
-    if(!jobs.length||!uid) return;
+    if(!uid) return;
     let cancelled=false;
     (async()=>{
       const cached=await readFromCache();
-      if(cancelled) return;
-      if(cached&&cached.length){
-        setRanks(cached);
-        setSource('cache');
-      } else {
-        // No cache yet — generate one via /rank (also fills DB cache)
-        await runRank();
-      }
+      if(!cancelled) setRanks(cached||[]);
     })();
 
-    // Subscribe to cache changes so dashboard auto-updates when matching runs
+    // Live-sync with the matching page: any cache change → re-read
     const c=getSB();
     let sub=null;
     if(c){
       sub=c.channel('aitoppicks-'+uid)
         .on('postgres_changes',{event:'*',schema:'public',table:'ai_match_cache',filter:`student_id=eq.${uid}`},async()=>{
           const fresh=await readFromCache();
-          if(!cancelled&&fresh) { setRanks(fresh); setSource('cache'); }
+          if(!cancelled) setRanks(fresh||[]);
         })
         .subscribe();
     }
     return()=>{ cancelled=true; if(sub&&c) c.removeChannel(sub); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[jobs.length,uid]);
+  },[uid]);
 
   // Hide entirely for users with no jobs at all
   if(!jobs.length) return null;
@@ -2052,7 +1992,7 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
           </div>
           <div>
             <div style={{fontSize:14.5,fontWeight:800,fontFamily:"'Plus Jakarta Sans',sans-serif",color:'var(--text)',letterSpacing:'-.02em'}}>Your AI top picks</div>
-            <div style={{fontSize:11.5,color:'var(--text3)'}}>Claude ranked every live listing against your profile</div>
+            <div style={{fontSize:11.5,color:'var(--text3)'}}>Top 3 by AI match score · same scoring as Internships</div>
           </div>
         </div>
         <button
@@ -2068,19 +2008,13 @@ function AITopPicks({jobs,user,setPage,setApplyJob}){
       {ranks===null && (
         <div style={{padding:'18px 0',textAlign:'center'}}>
           <div style={{width:32,height:32,borderRadius:'50%',border:'3px solid var(--border)',borderTopColor:'var(--accent)',animation:'spin .8s linear infinite',margin:'0 auto 10px'}}/>
-          <div style={{fontSize:12.5,color:'var(--text3)'}}>Claude is scoring {jobs.length} listings for you…</div>
+          <div style={{fontSize:12.5,color:'var(--text3)'}}>Loading your matches…</div>
         </div>
       )}
 
-      {ranks!==null && top.length===0 && !error && (
-        <div style={{padding:'14px 4px',fontSize:13,color:'var(--text2)'}}>
-          No strong AI matches yet — set your <button onClick={()=>setPage&&setPage('profile')} style={{background:'none',border:'none',color:'var(--accent)',fontWeight:700,cursor:'pointer',padding:0,textDecoration:'underline'}}>profile preferences</button> so Compass can score you accurately.
-        </div>
-      )}
-
-      {error && (
-        <div style={{padding:'10px 12px',background:'rgba(220,38,38,.06)',border:'1px solid rgba(220,38,38,.2)',borderRadius:10,fontSize:12.5,color:'#DC2626'}}>
-          {error} <button onClick={refresh} style={{background:'none',border:'none',color:'#DC2626',fontWeight:700,cursor:'pointer',textDecoration:'underline',padding:0,marginLeft:6}}>Try again</button>
+      {ranks!==null && top.length===0 && (
+        <div style={{padding:'14px 4px',fontSize:13,color:'var(--text2)',lineHeight:1.5}}>
+          No AI matches yet. <button onClick={()=>setPage&&setPage('internships')} style={{background:'none',border:'none',color:'var(--accent)',fontWeight:700,cursor:'pointer',padding:0,textDecoration:'underline'}}>Open Internships</button> and click <strong>Run AI Matching</strong> to score every listing against your profile. Your top picks will appear here automatically.
         </div>
       )}
 
