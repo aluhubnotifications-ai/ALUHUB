@@ -80,14 +80,25 @@
 
 ---
 
-## STEP 11: Privacy & Closing (5:50 - 6:10)
+## STEP 11: Behind the Scenes - How Schools Post (5:50 - 6:30)
+**[Switch to school/company view or show admin panel briefly]**
+
+"Behind the scenes, ALU Career Services and companies post opportunities here. They can post their own internships. Or forward opportunities from partner companies. They choose: students apply on ALUHub's form, or one click goes to the company's site. They set who sees what based on eligibility. They track where students get hired."
+
+**[Quick look at posting interface or company dashboard]**
+
+"Everything is controlled and fair. Schools decide what students see."
+
+---
+
+## STEP 12: Privacy & Closing (6:30 - 6:50)
 **[Show privacy/settings section briefly]**
 
 "Your data is protected. We don't sell it. AI reads your preferences and resume, not your identity. You apply with confidence."
 
 **[Show website URL]**
 
-"That's ALUHub. Find internships faster. Understand your fit. Prepare better. Get hired. Start now at aluhub.pages.dev"
+"That's ALUHub. For students. For schools. For companies. Find internships faster. Understand your fit. Prepare better. Get hired. Start now at aluhub.pages.dev"
 
 ---
 
