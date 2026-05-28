@@ -17,24 +17,21 @@
 
 ---
 
-## STEP 3: Sign In (1:15 - 1:45)
+## STEP 3: Sign In & Upload Resume (1:15 - 1:50)
 **[Log in slowly, type email and password]**
 
-"Sign in with your ALU email. Upload your resume. Tell the system what you're looking for."
+"Sign in with your ALU email."
+
+**[Show resume upload section, upload a resume file]**
+
+"Upload your resume. The system reads it. Analyzes your skills, your year, your experience."
 
 ---
 
-## STEP 4: Your Profile & Preferences (1:45 - 2:15)
-**[Show resume upload, preferences section - what role types, skills, location]**
+## STEP 4: Browse Your Filtered Opportunities (1:50 - 2:30)
+**[Scroll through internship listings - automatically filtered based on resume data]**
 
-"System reads your resume. Reads your preferences. Now it knows you. It will show you opportunities that match your profile and eligibility."
-
----
-
-## STEP 5: Browse Your Opportunities (2:15 - 2:50)
-**[Scroll through internship listings - they should be filtered/relevant to the profile]**
-
-"Here are your opportunities. Not 1000 random jobs. Just opportunities you're actually eligible for and actually fit your goals. Company logo. Job title. Description."
+"Now you see your opportunities. The system already filtered them based on your resume. Your year. Your eligibility. Your skills. Not 1000 random jobs from LinkedIn. Just opportunities you can actually apply for. Company logo. Job title. What they're looking for."
 
 ---
 
