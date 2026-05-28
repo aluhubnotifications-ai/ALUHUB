@@ -290,7 +290,7 @@ async function writeMatchCache(studentId: string, matches: MatchResult[]): Promi
     reasons:        m.reasons,
     matched_skills: m.matched_skills,
     tip:            m.tip,
-    match_reasons:  m.reasons.map((r) => ({ label: r, detail: '' })),
+    match_reasons:  m.reasons,
     matched_at:     new Date().toISOString(),
     stale:          false,
   }));
