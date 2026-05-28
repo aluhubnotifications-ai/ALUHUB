@@ -2384,7 +2384,7 @@ function Internships({setPage,onViewCompany}){
               const scoreMap=Object.fromEntries(data.map(r=>[r.job_id,r]));
               const scoredAll=dbJobs.map(j=>{
                 const m=scoreMap[j.id];
-                if(m) return{...j,match:m.score,matchTip:m.tip||null,matchReasons:m.match_reasons||[],matchedSkills:m.matched_skills||[]};
+                if(m) return{...j,match:m.score,matchTip:m.tip||null,matchReasons:(m.match_reasons||[]).map(r=>typeof r==='string'?r:r.label||''),matchedSkills:m.matched_skills||[]};
                 return j;
               }).sort((a,b)=>(b.match||0)-(a.match||0));
               setScoredJobs(scoredAll);
