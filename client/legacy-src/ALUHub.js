@@ -14075,9 +14075,9 @@ Visual rendering (use only when a picture beats prose):
                       : <AiLogo size={30}/>
                     }
                   </div>
-                  {m.role==='ai'
-                    ? <div className="aco-bubble" dangerouslySetInnerHTML={{__html:renderMarkdown(m.content)}}/>
-                    : <div className="aco-bubble">{m.content}</div>
+                  {m.role==='user'
+                    ? <div className="aco-bubble">{m.content}</div>
+                    : <div className="aco-bubble" dangerouslySetInnerHTML={{__html:renderMarkdown(m.content)}}/>
                   }
                 </div>
               ))}
@@ -14122,9 +14122,9 @@ Visual rendering (use only when a picture beats prose):
                       : <AiLogo size={30}/>
                     }
                   </div>
-                  {m.role==='ai'
-                    ? <div className="aco-bubble" dangerouslySetInnerHTML={{__html:renderMarkdown(m.content)}}/>
-                    : <div className="aco-bubble">{m.content}</div>
+                  {m.role==='user'
+                    ? <div className="aco-bubble">{m.content}</div>
+                    : <div className="aco-bubble" dangerouslySetInnerHTML={{__html:renderMarkdown(m.content)}}/>
                   }
                 </div>
               ))}
