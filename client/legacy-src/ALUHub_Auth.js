@@ -234,6 +234,12 @@ async function refreshSession() {
   if (error) {
     setAccessToken(null);
     setStoredUser(null);
+    // The refresh cookie is dead — the user has to sign in again. Flip the
+    // React auth state so the login screen shows instead of leaving the
+    // user stranded on a broken authenticated view firing 401s.
+    if (typeof window.__forceAuthRedirect === 'function') {
+      try { window.__forceAuthRedirect('Your session expired. Please sign in again.'); } catch (_) {}
+    }
     return null;
   }
   setAccessToken(data.accessToken);
@@ -1506,6 +1512,21 @@ function AppWithAuth() {
 
   useEffect(() => {
     checkSession();
+  }, []);
+
+  // Bridge from the non-React refresh path: when refreshSession() fails
+  // (refresh cookie expired or rejected), it calls this to flip the app
+  // back to the login screen.
+  useEffect(() => {
+    window.__forceAuthRedirect = (message) => {
+      if (typeof window.__pushUnregisterDeviceToken === 'function') {
+        try { window.__pushUnregisterDeviceToken(); } catch (_) {}
+      }
+      setCurrentUser(null);
+      setAuthState('unauthenticated');
+      if (message) { try { toast(message); } catch (_) {} }
+    };
+    return () => { try { delete window.__forceAuthRedirect; } catch (_) {} };
   }, []);
 
   async function checkSession() {
