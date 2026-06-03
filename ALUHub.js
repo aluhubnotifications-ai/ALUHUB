@@ -9881,7 +9881,7 @@ function App({user:initialUser,onSignOut}){
         </main>
       </div>
 
-      <div id="toast">
+      <div id="toast" className="toast">
         <span className="material-symbols-rounded" style={{fontSize:16}}>check_circle</span>
         <span id="toast-text"></span>
       </div>
