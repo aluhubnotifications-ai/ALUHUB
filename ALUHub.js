@@ -4,9 +4,12 @@ const { useState, useEffect, useRef } = React;
 function toast(msg) {
   const el = document.getElementById('toast');
   const txt = document.getElementById('toast-text');
+  if (!el || !txt) { try { alert(msg); } catch(_) { console.warn('toast:', msg); } return; }
   txt.textContent = msg;
-  el.classList.add('on');
-  setTimeout(() => el.classList.remove('on'), 3200);
+  el.classList.add('on','toast');
+  el.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#0A1828;color:#fff;padding:12px 18px;border-radius:10px;font-size:13.5px;font-weight:500;z-index:2147483647;box-shadow:0 8px 32px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;min-width:240px;max-width:360px;';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { el.classList.remove('on'); el.style.display='none'; }, 3500);
 }
 
 // ── CONFIRM MODAL ──
