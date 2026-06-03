@@ -8445,6 +8445,12 @@ function CompanyListingsPage({user}){
   const [deletingId,setDeletingId]=React.useState(null);
   const [togglingId,setTogglingId]=React.useState(null);
   const [selectedListing,setSelectedListing]=React.useState(null);
+  // Inline validation error shown inside the Create-Listing modal — keeps the
+  // user's attention on the form instead of a toast that pops up outside it.
+  const [formError,setFormError]=React.useState('');
+  // Reset the inline error whenever the modal is opened or closed so a stale
+  // message from a previous attempt doesn't greet the next open.
+  React.useEffect(()=>{ setFormError(''); },[showCreate]);
 
   // Student-reach counts shown on the create/edit listing modal so the
   // poster sees how many students are actually reachable instead of a
@@ -8617,21 +8623,22 @@ function CompanyListingsPage({user}){
   }
 
   async function handlePost(){
-    if(!form.title.trim()){toast('Title is required.');return;}
-    if(!form.description.trim()){toast('Description is required.');return;}
+    setFormError('');
+    if(!form.title.trim()){setFormError('Title is required.');return;}
+    if(!form.description.trim()){setFormError('“About This Role” is required.');return;}
     if(form.apply_mode==='external'){
       const u=(form.apply_url||'').trim();
-      if(!u){toast('Please paste the external apply URL.');return;}
-      if(!/^https?:\/\//i.test(u)){toast('Apply URL must start with http:// or https://');return;}
+      if(!u){setFormError('Please paste the external apply URL.');return;}
+      if(!/^https?:\/\//i.test(u)){setFormError('Apply URL must start with http:// or https://');return;}
     }
     if(isSchool&&form.is_for_other_company&&!form.original_company_name.trim()){
-      toast('Please enter the other company’s name.');return;
+      setFormError('Please enter the other company’s name.');return;
     }
     setPosting(true);
     try{
       const c=getSB();
-      if(!c){toast('Could not reach the server. Check your connection and try again.');return;}
-      if(!uid){toast('Your session expired. Please sign out and sign in again.');return;}
+      if(!c){setFormError('Could not reach the server. Check your connection and try again.');return;}
+      if(!uid){setFormError('Your session expired. Please sign out and sign in again.');return;}
       const payload={
         company_id:uid,title:form.title.trim(),description:form.description.trim(),
         responsibilities:form.responsibilities.trim(),requirements:form.requirements.trim(),
@@ -8714,7 +8721,7 @@ function CompanyListingsPage({user}){
       setEditId(null);
       setForm(blankForm);
       loadListings();
-    }catch(err){toast('Failed: '+(err.message||'Unknown error'));}
+    }catch(err){setFormError('Failed to save: '+(err.message||'Unknown error'));}
     finally{setPosting(false);}
   }
 
@@ -8869,6 +8876,13 @@ function CompanyListingsPage({user}){
               </button>
             </div>
             <div style={{padding:'20px 24px 24px',display:'flex',flexDirection:'column',gap:16}}>
+              {formError&&(
+                <div role="alert" style={{display:'flex',alignItems:'flex-start',gap:10,padding:'10px 14px',borderRadius:10,background:'rgba(220,38,38,.08)',border:'1px solid rgba(220,38,38,.3)',color:'#B91C1C',fontSize:13,lineHeight:1.45,fontWeight:600}}>
+                  <span className="material-symbols-rounded" style={{fontSize:18,flexShrink:0,marginTop:1}}>error</span>
+                  <div style={{flex:1}}>{formError}</div>
+                  <button type="button" onClick={()=>setFormError('')} style={{background:'transparent',border:'none',color:'#B91C1C',cursor:'pointer',padding:0,lineHeight:1,fontSize:18,fontWeight:700}} aria-label="Dismiss">×</button>
+                </div>
+              )}
               {/* SCHOOL-ONLY: post on behalf of another company */}
               {isSchool&&(
                 <div style={{padding:14,borderRadius:10,background:'rgba(99,102,241,.06)',border:'1px solid var(--border)'}}>
