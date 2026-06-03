@@ -8624,7 +8624,9 @@ function CompanyListingsPage({user}){
     }
     setPosting(true);
     try{
-      const c=getSB(); if(!c||!uid) return;
+      const c=getSB();
+      if(!c){toast('Could not reach the server. Check your connection and try again.');return;}
+      if(!uid){toast('Your session expired. Please sign out and sign in again.');return;}
       const payload={
         company_id:uid,title:form.title.trim(),description:form.description.trim(),
         responsibilities:form.responsibilities.trim(),requirements:form.requirements.trim(),

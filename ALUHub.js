@@ -6558,7 +6558,9 @@ function CompanyListingsPage({user}){
     }
     setPosting(true);
     try{
-      const c=getSB(); if(!c||!uid) return;
+      const c=getSB();
+      if(!c){toast('Could not reach the server. Check your connection and try again.');return;}
+      if(!uid){toast('Your session expired. Please sign out and sign in again.');return;}
       const payload={
         company_id:uid,title:form.title.trim(),description:form.description.trim(),
         responsibilities:form.responsibilities.trim(),requirements:form.requirements.trim(),
@@ -6572,13 +6574,11 @@ function CompanyListingsPage({user}){
         original_company_logo_url:(isSchool&&form.is_for_other_company)?(form.original_company_logo_url||null):null,
         allowed_years:form.allowed_years||[],
       };
-      if(editId){
-        await c.from('job_listings').update(payload).eq('id',editId).eq('company_id',uid);
-        toast('Listing updated ✓');
-      }else{
-        await c.from('job_listings').insert(payload);
-        toast(`${form.listing_type} posted! 🎉`);
-      }
+      const res=editId
+        ? await c.from('job_listings').update(payload).eq('id',editId).eq('company_id',uid)
+        : await c.from('job_listings').insert(payload);
+      if(res.error) throw res.error;
+      toast(editId?'Listing updated ✓':`${form.listing_type} posted! 🎉`);
       setShowCreate(false);
       setEditId(null);
       setForm(blankForm);
