@@ -96,6 +96,11 @@ a{color:inherit;text-decoration:none}
 .main.messenger-page .main-inner{padding:0!important;max-width:none!important;width:100%!important;height:100%!important;min-height:unset!important;overflow:hidden!important;position:relative;}
 .main.ai-insights-page{overflow:hidden!important;position:fixed!important;top:var(--topbar-h)!important;left:var(--sidebar)!important;right:0!important;bottom:0!important;height:calc(100dvh - var(--topbar-h))!important;min-height:unset!important;padding:0!important;margin:0!important;}
 .main.ai-insights-page .main-inner{padding:20px 24px!important;max-width:900px!important;height:100%!important;min-height:unset!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;}
+/* Compass mirrors AI Insights: fixed full-viewport pane so the chat fills
+   the screen instead of inheriting the standard scroll layout, and a
+   centered 980px column so the bubbles don't sprawl on desktop. */
+.main.compass-page{overflow:hidden!important;position:fixed!important;top:var(--topbar-h)!important;left:var(--sidebar)!important;right:0!important;bottom:0!important;height:calc(100dvh - var(--topbar-h))!important;min-height:unset!important;padding:0!important;margin:0!important;}
+.main.compass-page .main-inner{padding:20px 24px!important;max-width:980px!important;height:100%!important;min-height:unset!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;margin:0 auto!important;}
 .main-inner{padding:28px 32px;max-width:1600px;margin:0 auto;width:100%;box-sizing:border-box}
 .main-inner .welcome-hero{margin-left:-32px;margin-right:-32px;border-radius:0;border-left:none;border-right:none;position:relative;}
 .topbar-notif-bar{display:none!important}.canvas-topbar{display:none!important}.menu-toggle{display:none!important}
@@ -108,6 +113,8 @@ a{color:inherit;text-decoration:none}
   .sb-topbar-title{font-size:14px}
   .main.ai-insights-page{left:0!important;}
   .main.ai-insights-page .main-inner{padding:12px 12px!important;}
+  .main.compass-page{left:0!important;}
+  .main.compass-page .main-inner{padding:12px 12px!important;}
   .main.messenger-page{left:0!important;}
 }
 

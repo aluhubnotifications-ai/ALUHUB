@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aluhub-v32';
+const CACHE_NAME = 'aluhub-v33';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
