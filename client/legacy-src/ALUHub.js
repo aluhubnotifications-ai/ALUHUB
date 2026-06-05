@@ -12459,10 +12459,10 @@ Rules:
       .ai2-new-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);font-size:11px;font-weight:700;color:#dc2626;animation:ai3pulse 2s infinite;}
       @keyframes ai3pulse{0%,100%{opacity:1}50%{opacity:.6}}
       @media(max-width:640px){
-        .ai2-page{padding:0 0 70px;}
-        .ai2-hero{border-radius:14px;padding:18px 16px 14px;gap:12px;}
-        .ai2-hero-title{font-size:17px;} .ai2-hero-sub{font-size:12px;}
-        .ai2-hero-icon{width:44px;height:44px;font-size:20px;}
+        .ai2-page{padding:0;}
+        .ai2-hero{border-radius:12px;padding:10px 12px;gap:10px;margin-bottom:8px;}
+        .ai2-hero-title{font-size:14.5px;} .ai2-hero-sub{font-size:11.5px;}
+        .ai2-hero-icon{width:36px;height:36px;font-size:16px;border-radius:10px;}
         .ai2-hero-badge{display:none;}
         .ai2-card{padding:14px 14px;border-radius:12px;margin-bottom:10px;}
         .ai2-chat-wrap{border-radius:12px;}
@@ -12472,6 +12472,13 @@ Rules:
         .ai2-match-score-num{font-size:15px;}
         .ai2-score-ring{width:72px;height:72px;} .ai2-score-num{font-size:17px;}
         .ai2-tab{padding:7px 13px;font-size:12px;}
+        /* Keep quick-prompt suggestions to a single horizontally
+           scrollable row so they don't eat half the screen and push the
+           composer behind the keyboard. */
+        .ai2-quick-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+        .ai2-quick-row::-webkit-scrollbar{display:none;}
+        .ai2-qbtn{flex-shrink:0;}
+        .ai2-claude-badge{display:none;}
       }
       @media(max-width:768px){
         .main.ai-insights-page .main-inner{padding:12px 14px!important;}
@@ -13538,9 +13545,14 @@ function CompassPage({user}){
         .main.compass-page .main-inner{padding:12px 14px!important;}
       }
       @media(max-width:640px){
-        .aco-hero{padding:14px 16px;border-radius:12px;}
-        .aco-hero-title{font-size:15px;} .aco-hero-sub{font-size:12px;}
-        .aco-hero-icon{width:40px;height:40px;}
+        .aco-hero{padding:10px 12px;border-radius:12px;margin-bottom:10px;gap:10px;}
+        .aco-hero-title{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .aco-hero-sub{display:none;}
+        .aco-hero-icon{width:36px;height:36px;border-radius:10px;}
+        /* Hero action buttons: collapse to icon-only so the title row has
+           enough horizontal room and doesn't wrap one word per line. */
+        .aco-hero .aco-btn{padding:6px 9px;font-size:0;line-height:0;gap:0;}
+        .aco-hero .aco-btn .material-symbols-rounded{font-size:16px;line-height:1;margin:0;}
         .aco-input{font-size:16px;}
         .aco-rec{padding:14px 16px;}
         .aco-rec-title{font-size:14.5px;}
