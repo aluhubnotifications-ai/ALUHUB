@@ -12293,20 +12293,6 @@ function AIInsightsPage({user}){
     e.target.style.height=Math.min(e.target.scrollHeight,120)+'px';
   }
 
-  // Push layout up when mobile keyboard appears (visualViewport API)
-  useEffect(()=>{
-    const vv=window.visualViewport;
-    if(!vv) return;
-    function onVVResize(){
-      const keyboardH=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
-      const el=document.querySelector('.main.ai-insights-page');
-      if(el) el.style.bottom=keyboardH>50?keyboardH+'px':'0';
-    }
-    vv.addEventListener('resize',onVVResize);
-    vv.addEventListener('scroll',onVVResize);
-    return()=>{vv.removeEventListener('resize',onVVResize);vv.removeEventListener('scroll',onVVResize);};
-  },[]);
-
   // Cached match results — written by Internships AI Matching, read here
   const [cachedMatches,setCachedMatches]=useState([]);
   const [matchLoading,setMatchLoading]=useState(true);
@@ -14335,6 +14321,37 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
       window.__pushRegisterDeviceToken(uid);
     }
   },[user]);
+
+  // ── Mobile keyboard handler ─────────────────────────────────────
+  // Pages with position:fixed; bottom:0 (AI Insights, Compass, Messenger)
+  // get hidden behind the soft keyboard on iOS Safari because fixed
+  // elements stay anchored to the layout viewport, not the visual
+  // viewport. The visualViewport API tells us how tall the keyboard is
+  // so we can shrink those pages just enough to keep the composer
+  // visible. The topbar (position:fixed; top:0; z-index:400) is
+  // unaffected so it stays put.
+  useEffect(()=>{
+    const vv=window.visualViewport;
+    if(!vv) return;
+    const sel='.main.ai-insights-page,.main.compass-page,.main.messenger-page';
+    function apply(){
+      const kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+      document.querySelectorAll(sel).forEach(el=>{
+        el.style.bottom=kb>50?kb+'px':'0';
+      });
+    }
+    apply();
+    vv.addEventListener('resize',apply);
+    vv.addEventListener('scroll',apply);
+    // Re-apply when the page changes so a freshly-mounted .main picks
+    // up the current keyboard offset on focus.
+    const t=setTimeout(apply,80);
+    return()=>{
+      clearTimeout(t);
+      vv.removeEventListener('resize',apply);
+      vv.removeEventListener('scroll',apply);
+    };
+  },[page]);
 
   // ── Global realtime unread message counter ──────────────────────
   const pageRef=useRef(page);
