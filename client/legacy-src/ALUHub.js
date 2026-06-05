@@ -12420,15 +12420,16 @@ Rules:
       .ai2-quick-row{display:flex;gap:7px;flex-wrap:wrap;padding:8px 12px 0;}
       .ai2-qbtn{padding:5px 13px;border-radius:20px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;cursor:pointer;transition:all .13s;white-space:nowrap;}
       .ai2-qbtn:hover{background:var(--accent);color:#fff;}
-      .ai2-input-row{padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;}
-      .ai2-input{flex:1;padding:9px 13px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;resize:none;max-height:120px;line-height:1.4;overflow-y:auto;word-break:break-word;}
-      .ai2-input:focus{border-color:var(--accent);}
+      .ai2-input-row{padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--card);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
+      .ai2-input{flex:1;min-width:0;padding:11px 16px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;resize:none;max-height:120px;line-height:1.4;overflow-y:auto;word-break:break-word;transition:border-color .15s,box-shadow .15s;}
+      .ai2-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+      .ai2-send{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:opacity .15s,transform .1s;box-shadow:0 2px 8px rgba(37,99,235,.28);}
+      .ai2-send:active{transform:scale(.94);}
+      .ai2-send:disabled{opacity:.4;cursor:default;box-shadow:none;}
       @media(max-width:960px){
-        .ai2-input{font-size:16px;border-radius:14px;}
-        .ai2-send{width:42px;height:42px;}
+        .ai2-input{font-size:16px;padding:12px 16px;}
+        .ai2-send{width:46px;height:46px;}
       }
-      .ai2-send{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:opacity .15s;}
-      .ai2-send:disabled{opacity:.4;cursor:default;}
       .ai2-typing-row{display:flex;gap:4px;align-items:center;padding:8px 12px;}
       .ai2-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:ai3b .85s infinite;}
       .ai2-dot:nth-child(2){animation-delay:.17s;} .ai2-dot:nth-child(3){animation-delay:.34s;}
@@ -13506,11 +13507,16 @@ function CompassPage({user}){
       .aco-av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;overflow:hidden;}
       .aco-msg.user .aco-av{background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;}
       .aco-av img{width:100%;height:100%;object-fit:cover;}
-      .aco-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;}
-      .aco-input{flex:1;padding:9px 13px;border-radius:18px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;resize:none;max-height:120px;line-height:1.4;}
-      .aco-input:focus{border-color:var(--accent);}
-      .aco-send{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-      .aco-send:disabled{opacity:.4;cursor:default;}
+      .aco-input-row{padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--card);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
+      .aco-input{flex:1;min-width:0;padding:11px 16px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;resize:none;max-height:120px;line-height:1.4;transition:border-color .15s,box-shadow .15s;}
+      .aco-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+      .aco-send{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .1s;box-shadow:0 2px 8px rgba(37,99,235,.28);}
+      .aco-send:active{transform:scale(.94);}
+      .aco-send:disabled{opacity:.4;cursor:default;box-shadow:none;}
+      @media(max-width:960px){
+        .aco-input{font-size:16px;padding:12px 16px;}
+        .aco-send{width:46px;height:46px;}
+      }
       .aco-typing{display:flex;gap:4px;align-items:center;padding:6px 14px;}
       .aco-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aco-bounce .85s infinite;}
       .aco-dot:nth-child(2){animation-delay:.17s;} .aco-dot:nth-child(3){animation-delay:.34s;}
@@ -14340,8 +14346,9 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
   // elements stay anchored to the layout viewport, not the visual
   // viewport. The visualViewport API tells us how tall the keyboard is
   // so we can shrink those pages just enough to keep the composer
-  // visible. The topbar (position:fixed; top:0; z-index:400) is
-  // unaffected so it stays put.
+  // visible. Same trick keeps the topbar pinned to the visible top of
+  // the screen even when iOS scrolls the layout viewport to focus the
+  // input.
   useEffect(()=>{
     const vv=window.visualViewport;
     if(!vv) return;
@@ -14351,12 +14358,12 @@ function App({user:initialUser,onSignOut,onChangeEmail,onDeleteAccount}){
       document.querySelectorAll(sel).forEach(el=>{
         el.style.bottom=kb>50?kb+'px':'0';
       });
+      const tb=document.querySelector('.sb-topbar');
+      if(tb) tb.style.transform=vv.offsetTop?`translateY(${vv.offsetTop}px)`:'';
     }
     apply();
     vv.addEventListener('resize',apply);
     vv.addEventListener('scroll',apply);
-    // Re-apply when the page changes so a freshly-mounted .main picks
-    // up the current keyboard offset on focus.
     const t=setTimeout(apply,80);
     return()=>{
       clearTimeout(t);
