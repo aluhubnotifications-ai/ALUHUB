@@ -13967,7 +13967,7 @@ Visual rendering (use only when a picture beats prose):
   }
 
   return (
-    <div className="main aco-page">
+    <div className="aco-page">
       <div className="aco-hero">
         <div className="aco-hero-icon">
           <AiLogo size={24}/>
