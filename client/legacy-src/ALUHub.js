@@ -13512,7 +13512,7 @@ function CompassPage({user}){
       .aco-msg.ai .aco-bubble .ai2-html-frame{width:100%;min-height:280px;max-height:500px;border:1px solid var(--border);border-radius:10px;margin:10px 0;display:block;background:#fff;}
       .aco-av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;overflow:hidden;}
       .aco-msg.user .aco-av{background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;}
-      .aco-msg.ai .aco-av img{width:100%;height:100%;}
+      .aco-av img{width:100%;height:100%;object-fit:cover;}
       .aco-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;}
       .aco-input{flex:1;padding:9px 13px;border-radius:18px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;resize:none;max-height:120px;line-height:1.4;}
       .aco-input:focus{border-color:var(--accent);}
@@ -14071,7 +14071,9 @@ Visual rendering (use only when a picture beats prose):
                 <div key={i} className={'aco-msg '+(m.role==='user'?'user':'ai')}>
                   <div className="aco-av">
                     {m.role==='user'
-                      ? (firstName.slice(0,1).toUpperCase())
+                      ? (profile.avatar_url
+                          ? <img src={profile.avatar_url} alt=""/>
+                          : (profile.full_name||user?.form?.name||firstName||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase())
                       : <AiLogo size={30}/>
                     }
                   </div>
@@ -14118,7 +14120,9 @@ Visual rendering (use only when a picture beats prose):
                 <div key={i} className={'aco-msg '+(m.role==='user'?'user':'ai')}>
                   <div className="aco-av">
                     {m.role==='user'
-                      ? (firstName.slice(0,1).toUpperCase())
+                      ? (profile.avatar_url
+                          ? <img src={profile.avatar_url} alt=""/>
+                          : (profile.full_name||user?.form?.name||firstName||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase())
                       : <AiLogo size={30}/>
                     }
                   </div>
