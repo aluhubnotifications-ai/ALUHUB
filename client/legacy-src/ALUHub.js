@@ -12392,15 +12392,15 @@ Rules:
       .ai2-chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain;}
       .ai2-msg{display:flex;gap:8px;align-items:flex-start;max-width:88%;}
       .ai2-msg.user{align-self:flex-end;flex-direction:row-reverse;}
-      .ai2-bubble{padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.55;word-break:break-word;}
+      .ai2-bubble{padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;}
       /* User-typed bubbles keep raw whitespace; AI bubbles render rich
          markdown (paragraphs, lists, tables, code, bold) so they don't
          spill a wall of literal **asterisks** at the reader. */
       .ai2-msg.user .ai2-bubble{white-space:pre-wrap;}
       .ai2-msg.ai .ai2-bubble p{margin:0 0 8px;}
       .ai2-msg.ai .ai2-bubble p:last-child{margin-bottom:0;}
-      .ai2-msg.ai .ai2-bubble h3{font-size:14.5px;font-weight:800;margin:10px 0 6px;letter-spacing:-.01em;}
-      .ai2-msg.ai .ai2-bubble h4{font-size:13.5px;font-weight:700;margin:8px 0 5px;color:var(--text2);}
+      .ai2-msg.ai .ai2-bubble h3{font-size:13.5px;font-weight:800;margin:8px 0 4px;letter-spacing:-.01em;}
+      .ai2-msg.ai .ai2-bubble h4{font-size:12.5px;font-weight:700;margin:6px 0 4px;color:var(--text2);}
       .ai2-msg.ai .ai2-bubble ul,.ai2-msg.ai .ai2-bubble ol{margin:6px 0 8px;padding-left:22px;}
       .ai2-msg.ai .ai2-bubble li{margin:2px 0;}
       .ai2-msg.ai .ai2-bubble code{background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:5px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
@@ -12467,7 +12467,7 @@ Rules:
         .ai2-hero-badge{display:none;}
         .ai2-card{padding:14px 14px;border-radius:12px;margin-bottom:10px;}
         .ai2-chat-wrap{border-radius:12px;}
-        .ai2-bubble{font-size:13px;} .ai2-av{width:26px;height:26px;font-size:12px;}
+        .ai2-bubble{font-size:12.5px;padding:7px 11px;} .ai2-av{width:26px;height:26px;font-size:12px;}
         .ai2-match-row{gap:9px;padding:9px 4px;}
         .ai2-match-logo{width:38px;height:38px;font-size:12px;border-radius:9px;}
         .ai2-match-score-num{font-size:15px;}
@@ -13479,15 +13479,15 @@ function CompassPage({user}){
       .aco-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
       .aco-msg{display:flex;gap:10px;align-items:flex-start;max-width:88%;}
       .aco-msg.user{align-self:flex-end;flex-direction:row-reverse;}
-      .aco-bubble{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.55;word-break:break-word;}
+      .aco-bubble{padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;}
       .aco-msg.user .aco-bubble{background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;border-bottom-right-radius:3px;white-space:pre-wrap;}
       .aco-msg.ai .aco-bubble{background:var(--bg2);color:var(--text);border-bottom-left-radius:3px;}
       /* AI message rich markdown rendering — mirrors .ai2-bubble so Compass
          can draw mermaid diagrams, SVGs, HTML frames, tables, code blocks. */
       .aco-msg.ai .aco-bubble p{margin:0 0 8px;}
       .aco-msg.ai .aco-bubble p:last-child{margin-bottom:0;}
-      .aco-msg.ai .aco-bubble h3{font-size:14.5px;font-weight:800;margin:10px 0 6px;letter-spacing:-.01em;}
-      .aco-msg.ai .aco-bubble h4{font-size:13.5px;font-weight:700;margin:8px 0 5px;color:var(--text2);}
+      .aco-msg.ai .aco-bubble h3{font-size:13.5px;font-weight:800;margin:8px 0 4px;letter-spacing:-.01em;}
+      .aco-msg.ai .aco-bubble h4{font-size:12.5px;font-weight:700;margin:6px 0 4px;color:var(--text2);}
       .aco-msg.ai .aco-bubble ul,.aco-msg.ai .aco-bubble ol{margin:6px 0 8px;padding-left:22px;}
       .aco-msg.ai .aco-bubble li{margin:2px 0;}
       .aco-msg.ai .aco-bubble code{background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:5px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
@@ -13563,7 +13563,7 @@ function CompassPage({user}){
         .aco-rec{padding:14px 16px;}
         .aco-rec-title{font-size:14.5px;}
         .aco-msg{max-width:94%;}
-        .aco-bubble{font-size:13px;padding:9px 12px;}
+        .aco-bubble{font-size:12.5px;padding:7px 11px;}
         .aco-msgs{padding:12px 12px;}
       }
     `;

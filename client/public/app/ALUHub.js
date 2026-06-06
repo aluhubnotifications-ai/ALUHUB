@@ -237,15 +237,15 @@ open to full-time: ${R?"yes":"no"}`,J=await fetch(getApiUrl()+"/api/ai/chat",{me
       .ai2-chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain;}
       .ai2-msg{display:flex;gap:8px;align-items:flex-start;max-width:88%;}
       .ai2-msg.user{align-self:flex-end;flex-direction:row-reverse;}
-      .ai2-bubble{padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.55;word-break:break-word;}
+      .ai2-bubble{padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;}
       /* User-typed bubbles keep raw whitespace; AI bubbles render rich
          markdown (paragraphs, lists, tables, code, bold) so they don't
          spill a wall of literal **asterisks** at the reader. */
       .ai2-msg.user .ai2-bubble{white-space:pre-wrap;}
       .ai2-msg.ai .ai2-bubble p{margin:0 0 8px;}
       .ai2-msg.ai .ai2-bubble p:last-child{margin-bottom:0;}
-      .ai2-msg.ai .ai2-bubble h3{font-size:14.5px;font-weight:800;margin:10px 0 6px;letter-spacing:-.01em;}
-      .ai2-msg.ai .ai2-bubble h4{font-size:13.5px;font-weight:700;margin:8px 0 5px;color:var(--text2);}
+      .ai2-msg.ai .ai2-bubble h3{font-size:13.5px;font-weight:800;margin:8px 0 4px;letter-spacing:-.01em;}
+      .ai2-msg.ai .ai2-bubble h4{font-size:12.5px;font-weight:700;margin:6px 0 4px;color:var(--text2);}
       .ai2-msg.ai .ai2-bubble ul,.ai2-msg.ai .ai2-bubble ol{margin:6px 0 8px;padding-left:22px;}
       .ai2-msg.ai .ai2-bubble li{margin:2px 0;}
       .ai2-msg.ai .ai2-bubble code{background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:5px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
@@ -312,7 +312,7 @@ open to full-time: ${R?"yes":"no"}`,J=await fetch(getApiUrl()+"/api/ai/chat",{me
         .ai2-hero-badge{display:none;}
         .ai2-card{padding:14px 14px;border-radius:12px;margin-bottom:10px;}
         .ai2-chat-wrap{border-radius:12px;}
-        .ai2-bubble{font-size:13px;} .ai2-av{width:26px;height:26px;font-size:12px;}
+        .ai2-bubble{font-size:12.5px;padding:7px 11px;} .ai2-av{width:26px;height:26px;font-size:12px;}
         .ai2-match-row{gap:9px;padding:9px 4px;}
         .ai2-match-logo{width:38px;height:38px;font-size:12px;border-radius:9px;}
         .ai2-match-score-num{font-size:15px;}
@@ -406,15 +406,15 @@ Tone: warm, concrete, African-context aware. Skip filler ("Great question!", "I'
       .aco-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
       .aco-msg{display:flex;gap:10px;align-items:flex-start;max-width:88%;}
       .aco-msg.user{align-self:flex-end;flex-direction:row-reverse;}
-      .aco-bubble{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.55;word-break:break-word;}
+      .aco-bubble{padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;}
       .aco-msg.user .aco-bubble{background:linear-gradient(135deg,#0A2E5C,#2563EB);color:#fff;border-bottom-right-radius:3px;white-space:pre-wrap;}
       .aco-msg.ai .aco-bubble{background:var(--bg2);color:var(--text);border-bottom-left-radius:3px;}
       /* AI message rich markdown rendering \u2014 mirrors .ai2-bubble so Compass
          can draw mermaid diagrams, SVGs, HTML frames, tables, code blocks. */
       .aco-msg.ai .aco-bubble p{margin:0 0 8px;}
       .aco-msg.ai .aco-bubble p:last-child{margin-bottom:0;}
-      .aco-msg.ai .aco-bubble h3{font-size:14.5px;font-weight:800;margin:10px 0 6px;letter-spacing:-.01em;}
-      .aco-msg.ai .aco-bubble h4{font-size:13.5px;font-weight:700;margin:8px 0 5px;color:var(--text2);}
+      .aco-msg.ai .aco-bubble h3{font-size:13.5px;font-weight:800;margin:8px 0 4px;letter-spacing:-.01em;}
+      .aco-msg.ai .aco-bubble h4{font-size:12.5px;font-weight:700;margin:6px 0 4px;color:var(--text2);}
       .aco-msg.ai .aco-bubble ul,.aco-msg.ai .aco-bubble ol{margin:6px 0 8px;padding-left:22px;}
       .aco-msg.ai .aco-bubble li{margin:2px 0;}
       .aco-msg.ai .aco-bubble code{background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:5px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
@@ -490,7 +490,7 @@ Tone: warm, concrete, African-context aware. Skip filler ("Great question!", "I'
         .aco-rec{padding:14px 16px;}
         .aco-rec-title{font-size:14.5px;}
         .aco-msg{max-width:94%;}
-        .aco-bubble{font-size:13px;padding:9px 12px;}
+        .aco-bubble{font-size:12.5px;padding:7px 11px;}
         .aco-msgs{padding:12px 12px;}
       }
     `,document.head.appendChild(d)},[]),useEffect(()=>{if(window.mermaid)return;const d=document.createElement("script");d.src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js",d.onload=()=>{try{window.mermaid.initialize({startOnLoad:!1,theme:"neutral",securityLevel:"loose"})}catch{}},document.head.appendChild(d)},[]),useEffect(()=>{if(!window.mermaid)return;const d=document.querySelectorAll('.aco-bubble .mermaid:not([data-processed="true"])');if(d.length)try{window.mermaid.run({nodes:Array.from(d)})}catch{}},[l,m]),useEffect(()=>{x.current&&x.current.scrollIntoView({behavior:"smooth",block:"end"})},[l,m]);const b=(ce=e==null?void 0:e.user)==null?void 0:ce.id,[D,k]=useState(!1),[_,U]=useState([]),[O,q]=useState(null),[oe,K]=useState(!1);async function W(){const d=getSB();if(!d||!b)return[];const{data:f,error:N}=await d.from("compass_sessions").select("id,title,stage,updated_at,messages").eq("student_id",b).order("updated_at",{ascending:!1});if(N)return console.warn("[Compass] sessions list:",N.message),[];const p=(f||[]).map(L=>({id:L.id,title:L.title||T(L.messages)||"New conversation",stage:L.stage,updated_at:L.updated_at}));return U(p),f||[]}function T(d){var p;if(!Array.isArray(d))return null;const f=d.find(L=>L.role==="user"),N=((p=f==null?void 0:f.content)==null?void 0:p.trim())||"";return N?N.length>50?N.slice(0,50)+"\u2026":N:null}useEffect(()=>{if(!b){k(!0);return}let d=!1;return W().then(f=>{var N;if(!d){if(f.length){const p=f[0];q(p.id),Array.isArray(p.messages)&&p.messages.length&&i(p.messages),p.recommendations&&C(p.recommendations),p.stage&&o(p.stage),p.ready&&g(!0),console.log("[Compass] restored latest session \u2014 stage="+(p.stage||"?")+", messages="+(((N=p.messages)==null?void 0:N.length)||0))}k(!0)}}),()=>{d=!0}},[b]),useEffect(()=>{if(!D||!b||s==="welcome"&&l.length===0)return;const d=getSB();if(!d)return;const f=T(l)||"New conversation";O?d.from("compass_sessions").update({messages:l,recommendations:w,stage:s,ready:r,title:f}).eq("id",O).then(({error:N})=>{N&&console.warn("[Compass] session update:",N.message)}):d.from("compass_sessions").insert({student_id:b,messages:l,recommendations:w,stage:s,ready:r,title:f}).select("id").single().then(({data:N,error:p})=>{if(p){console.warn("[Compass] session insert:",p.message);return}N!=null&&N.id&&(q(N.id),W())})},[l,s,w,r,D,b,O]);async function ie(d){const f=getSB();if(!f)return;const{data:N,error:p}=await f.from("compass_sessions").select("messages,recommendations,prep_plans,stage,ready").eq("id",d).single();if(p){console.warn("[Compass] load session:",p.message);return}i(Array.isArray(N.messages)?N.messages:[]),C(N.recommendations||null),o(N.stage||"welcome"),g(!!N.ready),F(null),S(""),q(d),K(!1)}function H(){q(null),i([]),C(null),F(null),g(!1),o("welcome"),S(""),K(!1)}async function re(d){if(!confirm("Delete this conversation? This cannot be undone."))return;const f=getSB();if(!f)return;await f.from("compass_sessions").delete().eq("id",d);const N=_.filter(p=>p.id!==d);U(N),O===d&&(N.length?ie(N[0].id):H())}function ge(){const d=`Hi ${a}, I'm Compass. I'll ask a few short questions to understand what you're aiming for, then surface 3 live opportunities on ALUHub that fit. Ready? Tell me \u2014 what problem in the world feels most worth your time right now?`;i([{role:"assistant",content:d}]),o("interview")}const[Z,de]=useState([]);useEffect(()=>{if(!b)return;const d=getSB();d&&d.from("ai_match_cache").select("job_id,score,tip,matched_skills,match_reasons").eq("student_id",b).order("score",{ascending:!1}).limit(10).then(({data:f})=>{f&&de(f)})},[b]);function I(){const d=Z.length?` I can see you've already got ${Z.length} job match${Z.length===1?"":"es"} in your dashboard \u2014 ask me about any of them.`:" You haven't run matching yet \u2014 upload your CV on the Profile page first so I have data to work with.",f=`Hi ${a}, I'm Compass. Ask me anything about your career \u2014 your CV, specific jobs you're considering, interview prep, skills to build, or how to position yourself.
