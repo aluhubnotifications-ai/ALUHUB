@@ -253,8 +253,8 @@ interface MatchResult {
   reasons: string[];
   matched_skills: string[];
   tip: string | null;
-  // Captured fresh from Layer 2; not yet persisted to ai_match_cache
-  // (added in the cache-schema task), so cached results omit it.
+  // From Layer 2 — "what genuinely hurts this fit". Persisted to and read
+  // back from ai_match_cache (migration_match_scoring_v2.sql).
   mismatch_flags?: string[];
 }
 
@@ -265,7 +265,7 @@ async function readMatchCache(studentId: string, jobIds: string[]): Promise<Matc
   if (!jobIds.length) return [];
   const { data, error } = await supabaseAdmin
     .from('ai_match_cache')
-    .select('job_id, score, fit, reasons, matched_skills, tip')
+    .select('job_id, score, fit, reasons, matched_skills, tip, mismatch_flags')
     .eq('student_id', studentId)
     .eq('stale', false)
     .in('job_id', jobIds);
@@ -280,6 +280,7 @@ async function readMatchCache(studentId: string, jobIds: string[]): Promise<Matc
     reasons:        Array.isArray(row.reasons) ? row.reasons as string[] : [],
     matched_skills: Array.isArray(row.matched_skills) ? row.matched_skills as string[] : [],
     tip:            (row.tip as string | null) ?? null,
+    mismatch_flags: Array.isArray(row.mismatch_flags) ? row.mismatch_flags as string[] : [],
   }));
 }
 
@@ -294,6 +295,7 @@ async function writeMatchCache(studentId: string, matches: MatchResult[]): Promi
     reasons:        m.reasons,
     matched_skills: m.matched_skills,
     tip:            m.tip,
+    mismatch_flags: m.mismatch_flags ?? [],
     match_reasons:  m.reasons,
     matched_at:     new Date().toISOString(),
     stale:          false,
