@@ -306,7 +306,7 @@ async function writeMatchCache(studentId: string, matches: MatchResult[]): Promi
   if (error) console.warn('[matchCache] write error:', error.message);
 }
 
-function scoreToFit(score: number): MatchResult['fit'] {
+export function scoreToFit(score: number): MatchResult['fit'] {
   return score >= 85 ? 'strong' : score >= 70 ? 'good' : score >= 50 ? 'possible' : 'weak';
 }
 
@@ -318,7 +318,7 @@ function scoreToFit(score: number): MatchResult['fit'] {
 //   <0.4  → cap 60 : below Good (70); thin data never reads Good/Strong
 //   <0.7  → cap 80 : below Strong (85); partial data never reads Strong
 //   ≥0.7  → 99     : fully scoreable
-function completenessCap(completeness: number): number {
+export function completenessCap(completeness: number): number {
   if (completeness < 0.4) return 60;
   if (completeness < 0.7) return 80;
   return 99;
@@ -332,7 +332,7 @@ function completenessCap(completeness: number): number {
 // this base with a bounded semantic delta. matched_skills is computed
 // here, never by the model, so it cannot be hallucinated.
 
-interface Layer1Result {
+export interface Layer1Result {
   base: number;             // 0–100 deterministic score
   matched_skills: string[]; // student.skills ∩ job signals (max 5)
   completeness: number;     // 0–1 profile fill ratio
@@ -365,7 +365,7 @@ function profileCompleteness(profile: Record<string, unknown>): number {
   return filled / PROFILE_MATCH_FIELDS.length;
 }
 
-function scoreLayer1(
+export function scoreLayer1(
   profile: Record<string, unknown>,
   job: { title?: string; description?: string; type?: string; location?: string; tags?: string[] },
 ): Layer1Result {
@@ -424,7 +424,7 @@ function scoreLayer1(
 
 // ── Claude matching (only called for jobs not in cache) ─────────────
 
-async function callClaudeMatch(
+export async function callClaudeMatch(
   profile: Record<string, unknown>,
   jobs: Array<{ id: string; title: string; description?: string; type?: string; location?: string; tags?: string[] }>,
 ): Promise<{ matches: MatchResult[]; usage?: ClaudeResponse['usage'] }> {
