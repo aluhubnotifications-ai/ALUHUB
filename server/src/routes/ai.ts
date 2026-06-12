@@ -308,6 +308,20 @@ function scoreToFit(score: number): MatchResult['fit'] {
   return score >= 85 ? 'strong' : score >= 70 ? 'good' : score >= 50 ? 'possible' : 'weak';
 }
 
+// Thin profiles carry too little signal to justify a confident match, so
+// we ceiling the score by how complete the profile is. This is the cap
+// half of the completeness mechanism — backward-compatible (still a plain
+// number the frontend renders). The hard "unscored" gate (<0.4 → null)
+// is deferred until the frontend can render an unscored state.
+//   <0.4  → cap 60 : below Good (70); thin data never reads Good/Strong
+//   <0.7  → cap 80 : below Strong (85); partial data never reads Strong
+//   ≥0.7  → 99     : fully scoreable
+function completenessCap(completeness: number): number {
+  if (completeness < 0.4) return 60;
+  if (completeness < 0.7) return 80;
+  return 99;
+}
+
 // ── Layer 1: deterministic scoring (no LLM) ─────────────────────────
 // Produces an honest-by-construction base score from signals that VARY
 // across the candidate set (a constant signal — e.g. allowed_years,
@@ -487,12 +501,15 @@ async function callClaudeMatch(
     if (m && typeof m.job_id === 'string') byId.set(m.job_id, m);
   }
 
+  // Profile completeness is the same for every job, so derive the cap once.
+  const cap = completenessCap(layer1.get(scopedJobs[0].id)!.completeness);
+
   const matches: MatchResult[] = scopedJobs.map((j) => {
     const l1 = layer1.get(j.id)!;
     const m = byId.get(j.id);
     // Clamp the model's delta to its allowed band, default 0 if missing.
     const delta = Math.max(-30, Math.min(15, Math.round(Number(m?.delta) || 0)));
-    const score = Math.max(20, Math.min(99, l1.base + delta));
+    const score = Math.min(cap, Math.max(20, Math.min(99, l1.base + delta)));
     return {
       job_id:         j.id,
       score,
