@@ -9,11 +9,11 @@ export const aiRouter = Router();
 // Model selection per workload (CLAUDE.md guidance)
 // ────────────────────────────────────────────────────────────────────
 const MODELS = {
-  chat:    'claude-opus-4-7',     // best quality for free-form Insights chat
+  chat:    'claude-opus-4-8',     // best quality for free-form Insights chat
   match:   'claude-sonnet-4-6',   // cost-sensitive structured scoring (writes ai_match_cache)
   company: 'claude-sonnet-4-6',   // structured research output
-  coach:   'claude-opus-4-7',     // application writing — quality matters most
-  compass: 'claude-opus-4-7',     // multi-turn agentic career guidance
+  coach:   'claude-opus-4-8',     // application writing — quality matters most
+  compass: 'claude-opus-4-8',     // multi-turn agentic career guidance
 } as const;
 // NOTE: /api/ai/rank no longer calls Claude — it's a pure reader of
 // ai_match_cache. All scores come from /match (Sonnet) to guarantee
