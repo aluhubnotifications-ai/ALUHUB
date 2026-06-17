@@ -419,6 +419,9 @@ function AIPanel({onMatch,user}){
       await c.from('profiles').update({cv_filename:f.name||'cv.pdf',cv_uploaded_at:new Date().toISOString()}).eq('id',uid);
       setStoredCvName(f.name||'Uploaded CV');
       setHasStoredCv(true);
+      // Résumé drives matching — extract its text before scoring.
+      const{data:pub}=c.storage.from('aluhub-media').getPublicUrl(path);
+      await extractCvText(pub?.publicUrl);
       await runMatch(f.name||'upload');
       toast('CV uploaded and matched');
     }catch(err){
@@ -2626,6 +2629,9 @@ function Internships({setPage,onViewCompany}){
       setCvInfo(ci=>({...ci,hasCV:true,cvName:f.name||'Uploaded CV'}));
       toast('CV uploaded — running AI match…');
       setActiveTab('matching');
+      // Résumé drives matching — extract its text before scoring.
+      const{data:pub}=c.storage.from('aluhub-media').getPublicUrl(path);
+      await extractCvText(pub?.publicUrl);
       await runMatchFlow(f.name);
     }catch(err){
       toast('CV upload failed — try again');
@@ -11333,7 +11339,9 @@ function ProfilePage({user,onProfileUpdate,setPage,onChangeEmail,onDeleteAccount
       const {data}=c.storage.from('aluhub-media').getPublicUrl(path);
       setCvUrl(data?.publicUrl?`${data.publicUrl}?t=${Date.now()}`:null);
       toast('CV saved');
-      runBackgroundMatch(uid,{...initProfile,cv_filename:file.name,cv_uploaded_at:new Date().toISOString()});
+      // Résumé drives matching — extract its text before the background match.
+      const cvText=await extractCvText(data?.publicUrl);
+      runBackgroundMatch(uid,{...initProfile,cv_filename:file.name,cv_uploaded_at:new Date().toISOString(),cv_text:cvText||initProfile.cv_text||''});
     }catch(err){
       toast('CV upload failed — check Supabase Storage bucket');
       console.error(err);
@@ -12222,6 +12230,29 @@ function getApiUrl(){
     return 'http://localhost:4000';
   }
   return raw;
+}
+
+// Extract the résumé to text on the server (native PDF support) and persist
+// it to profiles.cv_text. The matcher treats the résumé as the PRIMARY fit
+// signal, so this must finish BEFORE a match runs. Best-effort: a failure
+// here just means the next match falls back to the thin profile fields.
+async function extractCvText(publicUrl){
+  if(!publicUrl) return null;
+  try{
+    const res=await fetch(getApiUrl()+'/api/ai/cv-extract',{
+      method:'POST',
+      headers:{'Content-Type':'application/json',...(window.__authHeaders?window.__authHeaders():{})},
+      body:JSON.stringify({fileUrl:publicUrl.split('?')[0]}),
+    });
+    if(!res.ok) throw new Error('cv-extract '+res.status);
+    const data=await res.json();
+    // Mirror into the in-memory profile so any client-side reader sees it too.
+    if(window.__aluHubUser?.profile) window.__aluHubUser.profile.cv_text=data.cv_text||'';
+    return data.cv_text||'';
+  }catch(err){
+    console.warn('[ALUHub] CV text extraction failed:',err);
+    return null;
+  }
 }
 
 async function callClaudeAI(systemPrompt, messages, maxTokens=600){
